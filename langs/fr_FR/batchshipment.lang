@@ -1,0 +1,42 @@
+# Translation file
+
+#
+# Generic
+#
+
+# Module label 'ModuleBatchShipmentName'
+ModuleBatchShipmentName = BatchShipment
+# Module description 'ModuleBatchShipmentDesc'
+ModuleBatchShipmentDesc = BatchShipment description
+
+#
+# Admin page
+#
+BatchShipmentSetup = BatchShipment setup
+Settings = Settings
+BatchShipmentSetupPage = BatchShipment setup page
+NewSection=New section
+BATCHSHIPMENT_MYPARAM1 = My param 1
+BATCHSHIPMENT_MYPARAM1Tooltip = My param 1 tooltip
+BATCHSHIPMENT_MYPARAM2=My param 2
+BATCHSHIPMENT_MYPARAM2Tooltip=My param 2 tooltip
+
+
+#
+# About page
+#
+About = About
+BatchShipmentAbout = About BatchShipment
+BatchShipmentAboutPage = BatchShipment about page
+
+#
+# Sample page
+#
+BatchShipmentArea = Home BatchShipment
+MyPageName = My page name
+
+#
+# Sample widget
+#
+MyWidget = My widget
+MyWidgetDescription = My widget description

@@ -1,0 +1,92 @@
+# Translation file
+
+#
+# Generic
+#
+
+# Module label 'ModuleBatchShipmentName'
+ModuleBatchShipmentName = Batch Shipment
+# Module description 'ModuleBatchShipmentDesc'
+ModuleBatchShipmentDesc = Module to do Batch picking of customer orders
+
+#
+# Admin page
+#
+BatchShipmentSetup = Batch Shipment setup
+Settings = Settings
+BatchShipmentSetupPage = Batch Shipment setup page
+NewSection=New section
+BATCHSHIPMENT_MYPARAM1 = My param 1
+BATCHSHIPMENT_MYPARAM1Tooltip = My param 1 tooltip
+BATCHSHIPMENT_MYPARAM2=My param 2
+BATCHSHIPMENT_MYPARAM2Tooltip=My param 2 tooltip
+MasterShipmentDocumentModules = Master shipment document models
+MasterShipmentNumberingModules = Master shipment numbering models
+
+#
+# About page
+#
+About = About
+BatchShipmentAbout = About Batch Shipment
+BatchShipmentAboutPage = Batch Shipment about page
+
+#
+# Sample page
+#
+BatchShipmentArea = Home Batch Shipment
+AddToMasterShipment = Add to %s
+MasterShipment = Master shipment
+New_MasterShipment = New master shipment
+List_MasterShipment = List
+PickedQuantity = Picked
+LoadedQuantity = Loaded
+OrderQuantity = Qty in Order
+BatchQuantity = Qty in Batch
+OrderRemovedFromMasterShipment = Order removed from master shipment %s
+OrderNotRemovedFromMasterShipment = Order not removed from master shipment %s
+PartlyReceived = Partial received
+SetDraftMasterShipment = Set master shipment to draft
+ValidatePicking = Validate Picking
+ValidateLoading = Validate Loading
+SetToValidated = Back to validated
+SetValidatedMasterShipment = Set master shipment to validated
+ConfirmCloseAsk = Confirm master shipment close. Important: no backward flow possible for the moment after close.
+CreateAndAddToNewMasterShipment = Add to new master shipment
+ShippedQuantity = Quantity send
+ToShipQuantity = Quantity to send
+ToReceiveQuantity = Qty open
+DueDate = Due date
+LineNo = Line No.
+NotAllLinesChecked = Not all lines checked.
+TrackingMissing = Tracking number missing.
+NotAllLinesStatusPicked = Not all lines status picked.
+NotAllLinesStatusLoaded = Not all lines status loaded.
+UndoAllLoad = Undo all Loading
+ConfirmUndoAllLoading = You are about to undo all Loading. Are you sure?
+DateDeliveryPlanned = ETA
+EstimatedWeight = Estimated weight
+NotAllLinesPicked = Not all lines picked
+StatusOrderSentShort = Partially-delivered
+StatusOrderSent = Partially-delivered
+Pick = Pick
+Load = Load
+CheckLoad = Check
+Picked = Picked
+Loaded = Loaded
+Checked = Checked
+QtyTake = Take
+CantCloseOrderWhenOnProcess = Can't set order as delivered when there is a line still on process in Master shipment.
+HasToBeStatusDelivered = Order has to be in Delivered status, first classify delivered then re-open. Validation will set back to partly delivered status.
+TrackingNumber = Tracking #
+UserPick = Picking User
+UserLoad = Loading User
+UserShip = Shipping User
+Datepick = Picking date
+Dateload = Loading date
+Dateship = Shipping date
+
+#
+# Sample widget
+#
+MyWidget = My widget
+MyWidgetDescription = My widget description
