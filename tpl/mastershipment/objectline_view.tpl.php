@@ -172,6 +172,16 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
 } else {
+	if (GETPOST('fk_entrepot', 'array')) {
+		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
+		$line->fk_entrepot = $fk_entrepotArray[$i + 1];
+	} elseif ($line->fk_entrepot) {
+		$line->fk_entrepot = $line->fk_entrepot;
+	} elseif ($line->fk_product) {
+		$line->fk_entrepot = $line->getBestWarehouse($product);
+	} else {
+		$line->fk_entrepot = 0;
+	}
 	$coldisplay++;
 	print '<td class="linecol">';
 	print $objectline->showOutputField($objectline->fields['fk_commande'], 'fk_commande', $line->fk_commande);
@@ -203,8 +213,13 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	if (!empty($conf->productbatch->enabled)) {
 		$coldisplay++;
 		print '<td class="linecoldescription right">';
-		if ($product->hasbatch() && $object->status == MasterShipment::STATUS_DRAFT) {
-			$selectedBatch = $line->fk_productbatch;
+		if ($line->fk_product > 0 && $product->hasbatch() && $object->status == MasterShipment::STATUS_DRAFT) {
+			if ($line->fk_productbatch) {
+				$selectedBatch = $line->fk_productbatch;
+			} else {
+				$selectedBatch = $line->getBestLot();
+			}
+
 			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', 0, 0, $line->fk_product);
 		} else if (empty($line->fk_productbatch)) {
 			print $langs->trans('NA');
@@ -221,19 +236,18 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 		$coldisplay++;
 	}
 	print '<td class="linecol">';
-	if (GETPOST('fk_entrepot', 'array')) {
-		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
-		$fk_entrepot = $fk_entrepotArray[$i + 1];
-	} elseif ($line->fk_entrepot) {
-		$fk_entrepot = $line->fk_entrepot;
+
+	if ($line->fk_product > 0) {
+		if ($line->status == MasterShipmentLine::STATUS_DRAFT && $object->status == MasterShipment::STATUS_DRAFT) {
+			print $formproduct->selectWarehouses($line->fk_entrepot, 'fk_entrepot['.($i + 1).']', '', 0, 0, $line->fk_product, '', 1);
+		} else {
+			print $objectline->showOutputField($objectline->fields['fk_entrepot'], 'fk_entrepot', $line->fk_entrepot) . (!empty($stockObject->real) ? ' (stock:' . $stockObject->real . ')' : '');
+			print '<input type="hidden" name="fk_entrepot['.($i + 1).']" value="'.$line->fk_entrepot.'">';
+		}
+	} else {
+		print $langs->trans('NA');
 	}
 
-	if ($line->status == MasterShipmentLine::STATUS_DRAFT && $object->status == MasterShipment::STATUS_DRAFT) {
-		print $formproduct->selectWarehouses($fk_entrepot, 'fk_entrepot['.($i + 1).']', '', 0, 0, $line->fk_product, '', 1);
-	} else {
-		print $objectline->showOutputField($objectline->fields['fk_entrepot'], 'fk_entrepot', $fk_entrepot) . (!empty($stockObject->real) ? ' (stock:' . $stockObject->real . ')' : '');
-		print '<input type="hidden" name="fk_entrepot['.($i + 1).']" value="'.$fk_entrepot.'">';
-	}
 	print '</td>';
 
 	$disabled = 0;

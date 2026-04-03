@@ -623,7 +623,7 @@ class MasterShipment extends CommonObject
 		global $conf;
 
 		$this->fetchLines();
-		$weightArray = $this->getTotalWeightVolume();
+		//$weightArray = $this->getTotalWeightVolume();
 		$this->value = $this->getTotalValue();
 		$result = $this->updateCommon($user, $notrigger);
 		if ($result > 0) {
@@ -2473,6 +2473,59 @@ class MasterShipmentLine extends CommonObjectLine
 	public function delete(User $user, $notrigger = false)
 	{
 		return $this->deleteCommon($user, $notrigger);
+	}
+
+	/**
+	 *  Return the best warehouse to pick or load the line depending on the quantity to pick/load and the stock of warehouses.
+	 *  @param  Product $product   Product object of the line
+	 *
+	 *  @return int             Id of the best warehouse
+	 */
+	public function getBestWarehouse($product)
+	{
+		if (!empty($this->fk_entrepot)) {
+			return $this->fk_entrepot;
+		} elseif (!empty($this->fk_product)) {
+			$product->load_stock('novirtual');
+			if (!empty($product->stock_warehouse)) {
+				// First try to find a warehouse with enough stock to pick/load whole quantity
+				foreach ($product->stock_warehouse as $warehouse => $qty) {
+					if (!empty($qty) && $qty >= $this->qty) {
+						return $warehouse;
+					}
+				}
+				// If not found, try to find a warehouse with at least some stock to pick/load partially quantity
+				foreach ($product->stock_warehouse as $warehouse => $qty) {
+					if (!empty($qty) && $qty > 0) {
+						return $warehouse;
+					}
+				}
+			}
+		}
+
+		return 0;
+	}
+
+	public function getBestLot()
+	{
+		// TODO split lines if not enough stock in one lot/batch to pick/load whole quantity
+		if (!empty($this->fk_productbatch)) {
+			return $this->fk_productbatch;
+		} else {
+			$productbatch = new ProductBatch($this->db);
+			$result = $productbatch->findAllForProduct($this->fk_product, $this->fk_entrepot, $this->qty, 'rowid', 'ASC');
+			if (is_array($result) && count($result) > 0) {
+				return $result[0]->id;
+			} else {
+				$result = $productbatch->findAllForProduct($this->fk_product, $this->fk_entrepot, 1, 'rowid', 'ASC');
+				if (is_array($result) && count($result) > 0) {
+					return $result[0]->id;
+				}
+			}
+			return 0;
+		}
+
+		return 0;
 	}
 
 	/**
