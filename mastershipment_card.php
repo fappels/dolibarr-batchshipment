@@ -95,6 +95,9 @@ dol_include_once('/batchshipment/lib/batchshipment_mastershipment.lib.php');
  * @var Societe $mysoc
  * @var Translate $langs
  * @var User $user
+ * @var int $hidedetails
+ * @var int $hidedesc
+ * @var int $hideref
  */
 
 // Load translation files required by the page
@@ -215,6 +218,7 @@ if (empty($reshook)) {
 	//include DOL_DOCUMENT_ROOT.'/core/actions_lineupdown.inc.php';
 
 	if ($action == 'confirm_group' && $confirm == 'yes' && $permissiontoadd) {
+		$result = 0;
 		$linesChecked = GETPOST('line_checkbox', 'array');
 		$productBatchToGroup = GETPOST('fk_productbatch', 'array');
 		$qtysToGroup = GETPOST('qty_group', 'array');
@@ -234,6 +238,7 @@ if (empty($reshook)) {
 	}
 
 	if ($action == 'confirm_pick' && $confirm == 'yes' && $permissiontoadd) {
+		$result = 0;
 		$linesChecked = GETPOST('line_checkbox', 'array');
 		$qtysToPick = GETPOST('qty_pick', 'array');
 		$warehouses = GETPOST('fk_entrepot', 'array');
@@ -597,8 +602,6 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	if ($action == 'setdraft') {
 		$formquestion = array();
 		$langs->load("stocks");
-		require_once DOL_DOCUMENT_ROOT.'/product/class/html.formproduct.class.php';
-		$formproduct = new FormProduct($db);
 		$text = ''; //$langs->trans("ConfirmSetDraftMasterShipmentForStock");
 		//$formquestion = array(
 		//	array('type' => 'other', 'name' => 'idwarehouse', 'label' => $label, 'value' => $formproduct->selectWarehouses(GETPOST('idwarehouse') ?GETPOST('idwarehouse') : 'ifone', 'idwarehouse', 'warehouseopen', 1, 0, 0, $langs->trans("NoStockAction"), 0, $forcecombo))
@@ -610,8 +613,6 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	if ($action == 'setvalidated') {
 		$formquestion = array();
 		$langs->load("stocks");
-		require_once DOL_DOCUMENT_ROOT.'/product/class/html.formproduct.class.php';
-		$formproduct = new FormProduct($db);
 		$text = ''; //$langs->trans("ConfirmSetValidatedMasterShipmentForStock");
 		//if (!empty($conf->global->MASTERSHIPMENT_DEFAULT_PICKING_LOCATION)) {
 		//	$warehouseid = $conf->global->MASTERSHIPMENT_DEFAULT_PICKING_LOCATION;
@@ -814,6 +815,8 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			$disableCloseWarning = '';
 			$disableValidateWarning = '';
 			$disableValidateLoadingWarning = '';
+			$disableBackToPickedWarning = '';
+			$disableValidatePickingWarning = '';
 			$rightfordraft = $permissiontoadd;
 			foreach ($object->lines as $line) {
 				if ($line->status != MasterShipmentLine::STATUS_DRAFT) {
@@ -823,6 +826,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 				}
 			}
 			$rightforbacktovalidate = $permissiontoadd;
+			$rightforbacktopicked = $permissiontoadd;
 			$allowClosing = $permissiontoadd;
 			$allowValidate = $permissiontoadd;
 			$allowValidatePicking = $permissiontoadd;

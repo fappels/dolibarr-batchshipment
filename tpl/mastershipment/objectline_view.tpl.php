@@ -36,6 +36,16 @@ if (empty($object) || !is_object($object)) {
 	exit;
 }
 
+/**
+ * @var mixed $forceall
+ * @var int $senderissupplier
+ * @var mixed $inputalsopricewithtax
+ * @var mixed $outputalsopricetotalwithtax
+ * @var mixed $permissiontoadd
+ * @var FormProduct $formproduct
+ * @var int $i
+ * @var Translate $langs
+ */
 
 global $forceall, $senderissupplier, $inputalsopricewithtax, $outputalsopricetotalwithtax, $permissiontoadd, $formproduct;
 
@@ -172,7 +182,12 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
 } else {
-	$stockObject = $line->getBestWarehouse($product);
+	if ($line->fk_product > 0) {
+		$stockObject = $line->getBestWarehouse($product);
+
+	} else {
+		$stockObject = null;
+	}
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
 		$line->fk_entrepot = $fk_entrepotArray[$i + 1];

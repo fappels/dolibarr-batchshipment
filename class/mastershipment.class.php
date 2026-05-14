@@ -163,40 +163,106 @@ class MasterShipment extends CommonObject
 		"fk_shipping_method" => array("type" => "int", "label" => "Shippingmethod", "enabled" => "1", 'position' => 165, 'notnull' => 0, "visible" => "-1", "css" => "maxwidth500 widthcentpercentminusxx",),
 		"tracking_number" => array("type" => "varchar(50)", "label" => "Trackingnumber", "enabled" => "1", 'position' => 170, 'notnull' => 0, "visible" => "-1",),
 	);
-	public $rowid;
-	public $entity;
-	public $ref;
+
+	/**
+	 * Label of mastershipment
+	 * @var string
+	 */
 	public $label;
+	/**
+	 * Value
+	 * @var float
+	 */
 	public $value;
+	/**
+	 * Weight
+	 * @var float
+	 */
 	public $weight;
+	/**
+	 * Estimated weight
+	 * @var float
+	 */
 	public $estimated_weight;
+	/**
+	 * Weight units
+	 * @var string
+	 */
 	public $weight_units;
+	/**
+	 * Picking progress
+	 * @var float
+	 */
 	public $picking_progress;
+	/**
+	 * Loading progress
+	 * @var float
+	 */
 	public $loading_progress;
+	/**
+	 * Proof uploaded
+	 * @var float
+	 */
 	public $proof_uploaded;
+	/**
+	 * Third party used when all linked orders are from same third party. Otherwise, fk_soc is null
+	 * @var int
+	 */
 	public $fk_soc;
-	public $fk_project;
+	/**
+	 * Description
+	 * @var string
+	 */
 	public $description;
-	public $note_public;
-	public $note_private;
-	public $date_creation;
-	public $date_validation;
+	/**
+	 * Picking date
+	 * @var int
+	 */
 	public $date_pick;
+	/**
+	 * Loading date
+	 * @var int
+	 */
 	public $date_load;
+	/**
+	 * Shipping date
+	 * @var int
+	 */
 	public $date_ship;
-	public $tms;
-	public $fk_user_creat;
-	public $fk_user_modif;
+	/**
+	 * User that validated the object
+	 * @var int
+	 */
 	public $fk_user_valid;
+	/**
+	 * User that picked the object
+	 * @var int
+	 */
 	public $fk_user_pick;
+	/**
+	 * User that loaded the object
+	 * @var int
+	 */
 	public $fk_user_load;
+	/**
+	 * User that shipped the object
+	 * @var int
+	 */
 	public $fk_user_ship;
-	public $last_main_doc;
-	public $import_key;
-	public $model_pdf;
-	public $status;
+	/**
+	 * Delivery date
+	 * @var int
+	 */
 	public $date_delivery;
+	/**
+	 * Shipping method
+	 * @var int
+	 */
 	public $fk_shipping_method;
+	/**
+	 * Tracking number
+	 * @var string
+	 */
 	public $tracking_number;
 
 
@@ -677,7 +743,7 @@ class MasterShipment extends CommonObject
 			$this->error = 'ErrorDeleteLineNotAllowedByObjectStatus';
 			return -2;
 		}
-
+		$res = 0;
 		$line = new MasterShipmentLine($this->db);
 		if (!$idline) {
 			if ($fk_commande) {
@@ -1281,7 +1347,11 @@ class MasterShipment extends CommonObject
 			return 0;
 		}
 
-		if (empty($idwarehouse) && GETPOSTISSET("idwarehouse")) $idwarehouse = GETPOST("idwarehouse", 'int');
+		if (GETPOSTISSET("idwarehouse")) {
+			$idwarehouse = GETPOST("idwarehouse", 'int');
+		} else {
+			$idwarehouse = 0;
+		}
 
 		/*if (! ((!getDolGlobalInt('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('batchshipment','write'))
 		 || (getDolGlobalInt('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('batchshipment','batchshipment_advance','validate'))))
@@ -1324,6 +1394,7 @@ class MasterShipment extends CommonObject
 	 * @param	array	$linesChecked	lines to group
 	 * @param	array	$qtysToGroup	qty's to group
 	 * @param	array	$warehouses		warehouses for group
+	 * @param	array	$productBatches	product batch id's for group
 	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
 	 */
 	public function group($user, $linesChecked, $qtysToGroup, $warehouses, $productBatches)
@@ -1492,6 +1563,7 @@ class MasterShipment extends CommonObject
 	{
 		$error = 0;
 		$deleted = 0;
+		$result = 0;
 
 		if (empty($this->lines)) {
 			$this->getLinesArray();
@@ -1704,15 +1776,15 @@ class MasterShipment extends CommonObject
 			if (!empty($line->fk_commande_line)) {
 				$orderLine = new OrderLine($this->db);
 				$orderLine->fetch($line->fk_commande_line);
-			}
-			if ($this->status == MasterShipment::STATUS_CLOSED && isset($line->qty_load)) {
-				$totalValue += ($line->qty_load * $orderLine->subprice);
-			} elseif ($this->status == MasterShipment::STATUS_SHIPMENTONPROCESS && isset($line->qty)) {
-				$totalValue += ($line->qty * $orderLine->subprice);
-			} elseif ($this->status == MasterShipment::STATUS_VALIDATED && isset($line->qty)) {
-				$totalValue += ($line->qty * $orderLine->subprice);
-			} elseif ($this->status == MasterShipment::STATUS_DRAFT && isset($line->qty)) {
-				$totalValue += ($line->qty * $orderLine->subprice);
+				if ($this->status == MasterShipment::STATUS_CLOSED && isset($line->qty_load)) {
+					$totalValue += ($line->qty_load * $orderLine->subprice);
+				} elseif ($this->status == MasterShipment::STATUS_SHIPMENTONPROCESS && isset($line->qty)) {
+					$totalValue += ($line->qty * $orderLine->subprice);
+				} elseif ($this->status == MasterShipment::STATUS_VALIDATED && isset($line->qty)) {
+					$totalValue += ($line->qty * $orderLine->subprice);
+				} elseif ($this->status == MasterShipment::STATUS_DRAFT && isset($line->qty)) {
+					$totalValue += ($line->qty * $orderLine->subprice);
+				}
 			}
 		}
 
@@ -2335,24 +2407,82 @@ class MasterShipmentLine extends CommonObjectLine
 		'comment' => array('type'=>'varchar(255)', 'label'=>'Comment', 'enabled'=>'1', 'notnull'=>-1, 'visible'=>1),
 		'position' => array('type'=>'integer', 'label'=>'Rang', 'enabled'=>'1', 'notnull'=>-1, 'visible'=>0)
 	);
-
-	public $rowid;
+	/**
+	 * ID of parent object
+	 * @var int
+	 */
 	public $fk_mastershipment;
-	public $fk_product;
+
+	/**
+	 * ID of linked warehouse
+	 * @var int
+	 */
 	public $fk_entrepot;
+	/**
+	 * ID of linked product batch
+	 * @var int
+	 */
 	public $fk_productbatch;
+	/**
+	 * ID of linked product lot
+	 * @var int
+	 */
 	public $fk_productlot;
-	public $qty;
+
+	/**
+	 * Picked quantity
+	 * @var float
+	 */
 	public $qty_pick;
+	/**
+	 * Loaded quantity
+	 * @var float
+	 */
 	public $qty_load;
+	/**
+	 * ID of linked order
+	 * @var int
+	 */
 	public $fk_commande;
+	/**
+	 * ID of linked order line
+	 * @var int
+	 */
 	public $fk_commande_line;
+	/**
+	 * ID of linked shipment
+	 * @var int
+	 */
 	public $fk_expedition;
+	/**
+	 * ID of linked shipment line
+	 * @var int
+	 */
 	public $fk_expedition_line;
+	/**
+	 * ID of linked shipment package
+	 * @var int
+	 */
 	public $fk_shipmentpackage;
+	/**
+	 * ID of linked shipment package line
+	 * @var int
+	 */
 	public $fk_shipmentpackage_line;
+	/**
+	 * Status
+	 * @var int
+	 */
 	public $status;
+	/**
+	 * Comment
+	 * @var string
+	 */
 	public $comment;
+	/**
+	 * Position
+	 * @var int
+	 */
 	public $position;
 
 	/**

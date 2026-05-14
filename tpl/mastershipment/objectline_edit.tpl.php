@@ -32,6 +32,13 @@ if (empty($object) || !is_object($object)) {
 	exit;
 }
 
+/**
+ * @var Translate $langs
+ * @var int $lineid
+ * @var int $forceall
+ * @var int $i
+ */
+
 
 global $forceall, $lineid;
 

@@ -152,8 +152,8 @@ class ActionsBatchShipment extends CommonHookActions
 					}
 					foreach ($selected as $objectid) {
 						$order = new Commande($this->db);
+						$orderLine = new OrderLine($this->db);
 						if ($orderlinesSelected) {
-							$orderLine = new OrderLine($this->db);
 							$orderLine->fetch($objectid);
 							if ($orderLine->id > 0) {
 								$order->fetch($orderLine->fk_commande);
@@ -236,8 +236,8 @@ class ActionsBatchShipment extends CommonHookActions
 					if ($result > 0) {
 						foreach ($selected as $objectid) {
 							$order = new Commande($this->db);
+							$orderLine = new OrderLine($this->db);
 							if ($orderlinesSelected) {
-								$orderLine = new OrderLine($this->db);
 								$orderLine->fetch($objectid);
 								if ($orderLine->id > 0) {
 									$order->fetch($orderLine->fk_commande);
@@ -990,7 +990,7 @@ class ActionsBatchShipment extends CommonHookActions
 	 * @param Commande				$object			order object
 	 * @param Object				$objectLine		order line object
 	 * @param float					$qty			Qty to add
-	 * @return NOK < 0 > OK, 0 = no add line
+	 * @return int NOK < 0 > OK, 0 = no add line
 	 */
 	private function addMasterShipmentLine($user, $mastershipment, $object, $objectLine, $qty)
 	{

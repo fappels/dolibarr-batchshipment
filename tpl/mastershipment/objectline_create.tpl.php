@@ -27,6 +27,12 @@ if (empty($object) || !is_object($object)) {
 	exit;
 }
 
+/**
+ * @var Translate $langs
+ * @var int $forceall
+ * @var int $forcetoshowtitlelines
+ */
+
 global $forceall, $forcetoshowtitlelines;
 
 if (empty($forceall)) $forceall = 0;
@@ -109,13 +115,13 @@ if (!$nolinesbefore) {
 		$colspan -= 2; // nbr of button
 	} elseif ($this->status == MasterShipment::STATUS_VALIDATED) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
-		print '<input type="submit" class="button" value="'.$langs->trans('Pick').'" name="pick" id="pickbutton"'.($disabled ? ' disabled title="'.$title.'"': '').'>';
+		print '<input type="submit" class="button" value="'.$langs->trans('Pick').'" name="pick" id="pickbutton">';
 		print '</td>';
 		$colspan -= $beforeSubmitButtonColspan;
 		$colspan -= 1; // nbr of button
 	} elseif ($this->status == MasterShipment::STATUS_DRAFT) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
-		print '<input type="submit" class="button" value="'.$langs->trans('Group').'" name="group" id="groupbutton"'.($disabled ? ' disabled title="'.$title.'"': '').'>';
+		print '<input type="submit" class="button" value="'.$langs->trans('Group').'" name="group" id="groupbutton">';
 		print '</td>';
 		$colspan -= $beforeSubmitButtonColspan;
 		$colspan -= 1; // nbr of button
