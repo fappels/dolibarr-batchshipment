@@ -412,7 +412,7 @@ class MasterShipment extends CommonObject
 	 * @param int		$fk_commande_line	order line id
 	 * @param string	$comment			line comment
 	 *
-	 * @return	int NOK < 0 > OK
+	 * @return	int NOK < 0 > lineid
 	 */
 	public function addLine($user, $fk_product, $qty, $fk_commande, $fk_commande_line, $comment = '')
 	{
@@ -640,6 +640,10 @@ class MasterShipment extends CommonObject
 						$this->errors[] = $shipment->error;
 					}
 				}
+			}
+			// sort mastershipment lines by product
+			if ($result > 0) {
+				$this->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
 			}
 		}
 		return $result;
@@ -2082,6 +2086,56 @@ class MasterShipment extends CommonObject
 		}
 	}
 
+	/** Sort lines
+	 * this function is used to sort lines depending on status of MasterShipment
+	 * It will set the position field of lines to be able to sort them in the right order on card and list.
+	 *
+	 * @param User $user Object user that sort lines
+	 * @param array $sorters array of sort properties, each element of array is an array with keys 'field' and 'direction' (ASC or DESC)
+	 * @return void
+	 */
+	public function sortLines($user,$sorters = array()) {
+		if (empty($this->lines)) {
+			$this->getLinesArray();
+		}
+
+		$data = array();
+		// convert object array to array of associative array
+		foreach ($this->lines as $line) {
+			$data[] = (array) $line;
+		}
+		// create args for php array_multisort
+		$multisortArgs = array();
+		foreach ($sorters as $sort) {
+			if (!empty($sort['sortfield']) && !empty($sort['sortorder'])) {
+				$tmp = array();
+				foreach ($data as $key => $values) {
+					$tmp[$key] = $values[$sort['sortfield']];
+				}
+				$multisortArgs[] = $tmp;
+				if ($sort['sortorder'] == 'DESC') {
+					$multisortArgs[] = SORT_DESC;
+				} else {
+					$multisortArgs[] = SORT_ASC;
+				}
+			}
+		}
+		$multisortArgs[] = &$data;
+		// call php array_multisort and get sorted data
+		call_user_func_array('array_multisort', $multisortArgs);
+		$data = array_pop($multisortArgs);
+		// convert array of associative array to object array
+		$position = 1;
+		foreach ($data as $value) {
+			// update position in database
+			$masterShipmentLine = new MasterShipmentLine($this->db);
+			$masterShipmentLine->fetch($value['id']);
+			$masterShipmentLine->position = $position;
+			$position++;
+			$masterShipmentLine->update($user);
+		}
+	}
+
 	/**
 	 *  Returns the reference to the following non used object depending on the active numbering module.
 	 *
@@ -2479,53 +2533,60 @@ class MasterShipmentLine extends CommonObjectLine
 	 *  Return the best warehouse to pick or load the line depending on the quantity to pick/load and the stock of warehouses.
 	 *  @param  Product $product   Product object of the line
 	 *
-	 *  @return int             Id of the best warehouse
+	 *  @return stdClass             best warehouse stock object with properties 'id' and 'real' (real stock) or null if no warehouse found
 	 */
 	public function getBestWarehouse($product)
 	{
-		if (!empty($this->fk_entrepot)) {
-			return $this->fk_entrepot;
-		} elseif (!empty($this->fk_product)) {
+		if (!empty($this->fk_product)) {
 			$product->load_stock('novirtual');
 			if (!empty($product->stock_warehouse)) {
 				// First try to find a warehouse with enough stock to pick/load whole quantity
-				foreach ($product->stock_warehouse as $warehouse => $qty) {
-					if (!empty($qty) && $qty >= $this->qty) {
-						return $warehouse;
+				foreach ($product->stock_warehouse as $warehouse => $stock) {
+					if (!empty($stock->real) && $stock->real >= $this->qty) {
+						$stock->fk_entrepot = $warehouse;
+						return $stock;
 					}
 				}
 				// If not found, try to find a warehouse with at least some stock to pick/load partially quantity
-				foreach ($product->stock_warehouse as $warehouse => $qty) {
-					if (!empty($qty) && $qty > 0) {
-						return $warehouse;
+				foreach ($product->stock_warehouse as $warehouse => $stock) {
+					if (!empty($stock->real) && $stock->real > 0) {
+						$stock->fk_entrepot = $warehouse;
+						return $stock;
 					}
 				}
 			}
 		}
 
-		return 0;
+		return null;
 	}
 
-	public function getBestLot()
+	/**
+	 *  Return the best lot/batch to pick or load the line depending on the quantity to pick/load and the stock of lots/batches.
+	 *  @param  stdClass $stockObject   Stock object of the warehouse to pick/load (object with properties 'id' and 'real')
+	 *  @param  string $mode            'fifo' or 'bestfit'
+	 *
+	 *  @return int|null                 Id of best lot/batch or null if no lot/batch found
+	 */
+	public function getBestLot($stockObject, $mode = 'fifo')
 	{
 		// TODO split lines if not enough stock in one lot/batch to pick/load whole quantity
-		if (!empty($this->fk_productbatch)) {
-			return $this->fk_productbatch;
-		} else {
-			$productbatch = new ProductBatch($this->db);
-			$result = $productbatch->findAllForProduct($this->fk_product, $this->fk_entrepot, $this->qty, 'rowid', 'ASC');
-			if (is_array($result) && count($result) > 0) {
-				return $result[0]->id;
-			} else {
-				$result = $productbatch->findAllForProduct($this->fk_product, $this->fk_entrepot, 1, 'rowid', 'ASC');
-				if (is_array($result) && count($result) > 0) {
-					return $result[0]->id;
+		global $conf;
+
+		$productbatch = new ProductBatch($this->db);
+		$conf->global->SHIPPING_DISPLAY_STOCK_ENTRY_DATE = 1; // We want to sort by entry date to pick/load first the oldest lot/batch
+		$result = $productbatch->findAll($this->db, $stockObject->id, 1, $this->fk_product);
+		$id = 0;
+		if (is_array($result) && count($result) > 0) {
+			foreach ($result as $batch) {
+				$stock_entry_date = $batch->context['stock_entry_date'];
+				$id = $batch->id;
+				if ($mode == 'fifo') break; // we take the first lot/batch with stock to pick/load whole quantity
+				if (!empty($batch->qty) && $batch->qty >= $this->qty) {
+					break; // best fit lot/batch found with enough stock to pick/load whole quantity
 				}
 			}
-			return 0;
 		}
-
-		return 0;
+		return $id;
 	}
 
 	/**

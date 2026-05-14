@@ -172,13 +172,14 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
 } else {
+	$stockObject = $line->getBestWarehouse($product);
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
 		$line->fk_entrepot = $fk_entrepotArray[$i + 1];
 	} elseif ($line->fk_entrepot) {
 		$line->fk_entrepot = $line->fk_entrepot;
 	} elseif ($line->fk_product) {
-		$line->fk_entrepot = $line->getBestWarehouse($product);
+		$line->fk_entrepot = $stockObject ? $stockObject->fk_entrepot : 0;
 	} else {
 		$line->fk_entrepot = 0;
 	}
@@ -216,11 +217,13 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 		if ($line->fk_product > 0 && $product->hasbatch() && $object->status == MasterShipment::STATUS_DRAFT) {
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
+			} elseif (isset($stockObject)) {
+				$selectedBatch = $line->getBestLot($stockObject);
 			} else {
-				$selectedBatch = $line->getBestLot();
+				$selectedBatch = 0;
 			}
 
-			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', 0, 0, $line->fk_product);
+			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', 0, 0, $line->fk_product, $line->fk_entrepot);
 		} else if (empty($line->fk_productbatch)) {
 			print $langs->trans('NA');
 		} else {

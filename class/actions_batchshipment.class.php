@@ -211,6 +211,8 @@ class ActionsBatchShipment extends CommonHookActions
 								$order->array_options['options_batchshipment_mastershipment'] = $mastershipment->id;
 								$order->insertExtraFields();
 							}
+							// sort mastershipment lines by product
+							$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
 						} else {
 							$error++;
 							$this->errors[] = 'You can only add to a master shipment from a validated order or partial delivered order.';
@@ -290,6 +292,8 @@ class ActionsBatchShipment extends CommonHookActions
 									$order->array_options['options_batchshipment_mastershipment'] = $mastershipment->id;
 									$order->insertExtraFields();
 								}
+								// sort mastershipment lines by product
+								$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
 							} else {
 								$error++;
 								$this->errors[] = 'You can only add to a master shipment from a validated or or partial delivered order.';
@@ -1049,6 +1053,22 @@ class ActionsBatchShipment extends CommonHookActions
 							$objectLine->id,
 							$objectLine->comment
 						);
+						if ($result < 0) {
+							$this->errors = $mastershipment->errors;
+						} elseif ($objectLine->fk_product > 0) {
+							$product = new Product($this->db);
+							$product->fetch($objectLine->fk_product);
+							$mastershipmentLine = new MasterShipmentLine($this->db);
+							$mastershipmentLine->fetch($result); // refetch to set stock defaults
+							$stockObject = $mastershipmentLine->getBestWarehouse($product);
+							if ($stockObject) {
+								$mastershipmentLine->fk_entrepot = $stockObject->fk_entrepot;
+								if ($product->hasbatch()) {
+									$mastershipmentLine->fk_productbatch = $mastershipmentLine->getBestLot($stockObject);
+								}
+								$mastershipmentLine->update($user);
+							}
+						}
 					} else {
 						$result = -1;
 						$mastershipment->error = 'Bad addline source object';

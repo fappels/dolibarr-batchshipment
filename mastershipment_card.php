@@ -599,7 +599,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		$langs->load("stocks");
 		require_once DOL_DOCUMENT_ROOT.'/product/class/html.formproduct.class.php';
 		$formproduct = new FormProduct($db);
-		//$text = $langs->trans("ConfirmSetDraftMasterShipmentForStock");
+		$text = ''; //$langs->trans("ConfirmSetDraftMasterShipmentForStock");
 		//$formquestion = array(
 		//	array('type' => 'other', 'name' => 'idwarehouse', 'label' => $label, 'value' => $formproduct->selectWarehouses(GETPOST('idwarehouse') ?GETPOST('idwarehouse') : 'ifone', 'idwarehouse', 'warehouseopen', 1, 0, 0, $langs->trans("NoStockAction"), 0, $forcecombo))
 		//);
@@ -612,7 +612,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		$langs->load("stocks");
 		require_once DOL_DOCUMENT_ROOT.'/product/class/html.formproduct.class.php';
 		$formproduct = new FormProduct($db);
-		//$text = $langs->trans("ConfirmSetValidatedMasterShipmentForStock");
+		$text = ''; //$langs->trans("ConfirmSetValidatedMasterShipmentForStock");
 		//if (!empty($conf->global->MASTERSHIPMENT_DEFAULT_PICKING_LOCATION)) {
 		//	$warehouseid = $conf->global->MASTERSHIPMENT_DEFAULT_PICKING_LOCATION;
 		//} else {
