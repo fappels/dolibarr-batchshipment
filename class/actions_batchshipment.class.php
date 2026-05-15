@@ -141,11 +141,15 @@ class ActionsBatchShipment extends CommonHookActions
 		$massAction = $parameters['massaction'];
 
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
-		if (in_array($parameters['currentcontext'], array('orderlist'))) {		// do something only for the context 'somecontext1' or 'somecontext2'
+		if (in_array($parameters['currentcontext'], array('orderlist', 'orderlistdetail'))) {		// do something only for the context 'somecontext1' or 'somecontext2'
 			if (preg_match('/^add_to_mastershipment_([0-9]+)/', $massAction, $matches)) {
 				$mastershipmentId = $matches[1];
 				if ($mastershipmentId > 0) {
-					$orderlinesSelected = false; // for future use if we want to be able to select lines instead of only orders
+					if ($parameters['currentcontext'] == 'orderlistdetail') {
+						$orderlinesSelected = true;
+					} else {
+						$orderlinesSelected = false;
+					}
 					$selected = array();
 					if (count($parameters['toselect']) > 0) {
 						$selected = $parameters['toselect'];
@@ -223,7 +227,11 @@ class ActionsBatchShipment extends CommonHookActions
 					$this->errors[] = 'Error on master shipment id.';
 				}
 			} elseif ($massAction == 'create_mastershipment') {
-				$orderlinesSelected = false; // for future use if we want to be able to select lines instead of only orders
+				if ($parameters['currentcontext'] == 'orderlistdetail') {
+					$orderlinesSelected = true;
+				} else {
+					$orderlinesSelected = false;
+				}
 				$selected = array();
 				if (count($parameters['toselect']) > 0) {
 					$selected = $parameters['toselect'];
@@ -356,7 +364,7 @@ class ActionsBatchShipment extends CommonHookActions
 		$error = 0; // Error counter
 		$disabled = 1;
 
-		if (in_array($parameters['currentcontext'], array('orderlist'))) {		// do something only for the context 'somecontext1' or 'somecontext2'
+		if (in_array($parameters['currentcontext'], array('orderlist', 'orderlistdetail'))) {		// do something only for the context 'somecontext1' or 'somecontext2'
 			dol_include_once('/batchshipment/class/mastershipment.class.php');
 			if ($user->hasRight('batchshipment', 'mastershipment', 'write')) {
 				$disabled = 0;

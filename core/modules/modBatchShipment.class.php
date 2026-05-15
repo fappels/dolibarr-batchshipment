@@ -123,7 +123,8 @@ class modBatchShipment extends DolibarrModules
 				'data' => array(
 					'orderlist',
 					'shipmentlist',
-					'shipmentpackagelist'
+					'shipmentpackagelist',
+					'orderlistdetail'
 				),
 				'entity' => '0',
 			),
