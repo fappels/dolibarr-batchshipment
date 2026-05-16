@@ -183,8 +183,7 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay = $coldisplay + 1;
 } else {
 	if ($line->fk_product > 0) {
-		$stockObject = $line->getBestWarehouse($product);
-
+		$stockObject = $line->getBestWarehouse($product, $object->fk_entrepot);
 	} else {
 		$stockObject = null;
 	}
@@ -195,6 +194,8 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 		$line->fk_entrepot = $line->fk_entrepot;
 	} elseif ($line->fk_product) {
 		$line->fk_entrepot = $stockObject ? $stockObject->fk_entrepot : 0;
+	} elseif ($object->fk_entrepot) {
+		$line->fk_entrepot = $object->fk_entrepot;
 	} else {
 		$line->fk_entrepot = 0;
 	}

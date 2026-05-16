@@ -174,7 +174,7 @@ class ActionsBatchShipment extends CommonHookActions
 							if (!$orderlinesSelected) {
 								$result = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id);
 							} else {
-								$result = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id . ' AND fk_commande_line:=:' . $orderLine->id);
+								$result = $mastershipmentLine->fetchAll('', '', 0, 0, '(fk_commande:=:' . $order->id . ') AND (fk_commande_line:=:' . $orderLine->id . ')');
 							}
 							// check if order already in mastershipment and/or shipment
 							$qtyInMaster = 0;
@@ -191,7 +191,7 @@ class ActionsBatchShipment extends CommonHookActions
 							foreach ($order->lines as $line) {
 								if (!$orderlinesSelected || $line->id == $orderLine->id) {
 									if ($orderlinesSelected) {
-										$toShipQty = price2num(GETPOST('toshipqty_'.$line->id, 'alpha'));
+										$toShipQty = $orderLine->qty - $qtyInMaster - ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 									} else {
 										$toShipQty = $line->qty - $qtyInMaster - ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 									}
@@ -214,6 +214,9 @@ class ActionsBatchShipment extends CommonHookActions
 							if ($addedToMastershipment) {
 								$order->array_options['options_batchshipment_mastershipment'] = $mastershipment->id;
 								$order->insertExtraFields();
+								setEventMessages($langs->trans('AddedToMasterShipment', $order->ref), null, 'mesgs');
+							} else {
+								setEventMessages($langs->trans('NotAddedToMasterShipment', $order->ref), null, 'warnings');
 							}
 							// sort mastershipment lines by product
 							$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
@@ -239,7 +242,6 @@ class ActionsBatchShipment extends CommonHookActions
 				if (count($selected) > 0) {
 					dol_include_once('/batchshipment/class/mastershipment.class.php');
 					$mastershipment = new MasterShipment($this->db);
-					$mastershipment->label = "Please set master shipment label";
 					$result = $mastershipment->create($user);
 					if ($result > 0) {
 						foreach ($selected as $objectid) {
@@ -259,7 +261,7 @@ class ActionsBatchShipment extends CommonHookActions
 								if (!$orderlinesSelected) {
 									$result = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id);
 								} else {
-									$result = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id . ' AND fk_commande_line:=:' . $orderLine->id);
+									$result = $mastershipmentLine->fetchAll('', '', 0, 0, '(fk_commande:=:' . $order->id . ') AND (fk_commande_line:=:' . $orderLine->id . ')');
 								}
 								// check if order already in mastershipment
 								$qtyInMaster = 0;
@@ -276,7 +278,7 @@ class ActionsBatchShipment extends CommonHookActions
 								foreach ($order->lines as $line) {
 									if (!$orderlinesSelected || $line->id == $orderLine->id) {
 										if ($orderlinesSelected) {
-											$toShipQty = price2Num(GETPOST('toshipqty_'.$line->id, 'alpha'));
+											$toShipQty = $orderLine->qty - $qtyInMaster- ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 										} else {
 											$toShipQty = $line->qty - $qtyInMaster- ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 										}
@@ -299,6 +301,9 @@ class ActionsBatchShipment extends CommonHookActions
 								if ($addedToMastershipment) {
 									$order->array_options['options_batchshipment_mastershipment'] = $mastershipment->id;
 									$order->insertExtraFields();
+									setEventMessages($langs->trans('AddedToMasterShipment', $order->ref), null, 'mesgs');
+								} else {
+									setEventMessages($langs->trans('NotAddedToMasterShipment', $order->ref), null, 'warnings');
 								}
 								// sort mastershipment lines by product
 								$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
@@ -366,6 +371,7 @@ class ActionsBatchShipment extends CommonHookActions
 
 		if (in_array($parameters['currentcontext'], array('orderlist', 'orderlistdetail'))) {		// do something only for the context 'somecontext1' or 'somecontext2'
 			dol_include_once('/batchshipment/class/mastershipment.class.php');
+			dol_include_once('/product/stock/class/entrepot.class.php');
 			if ($user->hasRight('batchshipment', 'mastershipment', 'write')) {
 				$disabled = 0;
 			} else {
@@ -376,7 +382,17 @@ class ActionsBatchShipment extends CommonHookActions
 			$this->resprints = '';
 			if (is_array($drafts) && count($drafts) > 0) {
 				foreach ($drafts as $mastershipment) {
-					$label = '<span class="fa fa-ship paddingrightonly"></span>'.$langs->trans("AddToMasterShipment", $mastershipment->label);
+					if (!empty($mastershimpment->label)) {
+						$label = $mastershipment->label;
+					} else {
+						$label = $mastershipment->ref;
+					}
+					if (!empty($mastershipment->fk_entrepot)) {
+						$entrepot = new Entrepot($this->db);
+						$entrepot->fetch($mastershipment->fk_entrepot);
+						$label .= ' - '.$entrepot->label;
+					}
+					$label = '<span class="fa fa-ship paddingrightonly"></span>'.$langs->trans("AddToMasterShipment", $label);
 					$this->resprints .= '<option value="add_to_mastershipment_' . $mastershipment->id . '"'.($disabled?' disabled="disabled"':'').' data-html="'.dol_escape_htmltag($label).'">'.$label.'</option>';
 				}
 			}
@@ -1052,29 +1068,52 @@ class ActionsBatchShipment extends CommonHookActions
 					$result = $mastershipment->update($user);
 				}
 				if ($result >= 0) {
+					$result = 0;
 					if ($objectLine->element == 'commandedet') {
-						$result = $mastershipment->addLine(
-							$user,
-							$objectLine->fk_product,
-							$qty,
-							$object->id,
-							$objectLine->id,
-							$objectLine->comment
-						);
-						if ($result < 0) {
-							$this->errors = $mastershipment->errors;
-						} elseif ($objectLine->fk_product > 0) {
-							$product = new Product($this->db);
+						$mastershipmentLine = new MasterShipmentLine($this->db);
+						$product = new Product($this->db);
+						$stockObject = null;
+						$addLine = true;
+						if ($objectLine->fk_product > 0) {
 							$product->fetch($objectLine->fk_product);
-							$mastershipmentLine = new MasterShipmentLine($this->db);
-							$mastershipmentLine->fetch($result); // refetch to set stock defaults
-							$stockObject = $mastershipmentLine->getBestWarehouse($product);
+							$mastershipmentLine->qty = $qty; // set before addLine to be able to use it in getBestWarehouse and getBestLot
+							$mastershipmentLine->fk_product = $product->id;
+							$stockObject = $mastershipmentLine->getBestWarehouse($product, $mastershipment->fk_entrepot);
 							if ($stockObject) {
-								$mastershipmentLine->fk_entrepot = $stockObject->fk_entrepot;
-								if ($product->hasbatch()) {
-									$mastershipmentLine->fk_productbatch = $mastershipmentLine->getBestLot($stockObject);
+								if ($stockObject->real < $qty && $mastershipment->stock_mode == 2) {
+									$addLine = false;
+								} elseif ($stockObject->real <= 0 && $mastershipment->stock_mode == 1) {
+									$addLine = false;
 								}
-								$mastershipmentLine->update($user);
+							} elseif ($mastershipment->stock_mode > 0) {
+								$addLine = false;
+							}
+						} elseif ($mastershipment->stock_mode > 0) {
+							$addLine = false; // free line also have no stock
+						}
+						if ($addLine) {
+							$result = $mastershipment->addLine(
+								$user,
+								$objectLine->fk_product,
+								$qty,
+								$object->id,
+								$objectLine->id,
+								$objectLine->comment
+							);
+							if ($result < 0) {
+								$this->errors = $mastershipment->errors;
+							} elseif ($objectLine->fk_product > 0) {
+								$mastershipmentLine->fetch($result); // refetch to set stock defaults
+								if ($stockObject) {
+									$mastershipmentLine->fk_entrepot = $stockObject->fk_entrepot;
+									if ($product->hasbatch()) {
+										$mastershipmentLine->fk_productbatch = $mastershipmentLine->getBestLot($stockObject);
+									}
+									$mastershipmentLine->update($user);
+								} elseif ($mastershipment->fk_entrepot > 0) {
+									$mastershipmentLine->fk_entrepot = $mastershipment->fk_entrepot;
+									$mastershipmentLine->update($user);
+								}
 							}
 						}
 					} else {

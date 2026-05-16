@@ -84,6 +84,12 @@ UserShip = Shipping User
 Datepick = Picking date
 Dateload = Loading date
 Dateship = Shipping date
+StockMode = Allow only add lines with stock
+Off = Off
+PartualStock = Partual Stock
+FullStock = Full Stock
+NotAddedToMasterShipment = %s not added to Mastershipment
+AddedToMasterShipment = %s added to Mastershipment
 
 #
 # Sample widget

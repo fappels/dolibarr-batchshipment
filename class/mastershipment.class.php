@@ -162,6 +162,8 @@ class MasterShipment extends CommonObject
 		"date_delivery" => array("type" => "datetime", "label" => "DeliveryDate", "enabled" => "1", 'position' => 160, 'notnull' => 0, "visible" => "-1",),
 		"fk_shipping_method" => array("type" => "int", "label" => "Shippingmethod", "enabled" => "1", 'position' => 165, 'notnull' => 0, "visible" => "-1", "css" => "maxwidth500 widthcentpercentminusxx",),
 		"tracking_number" => array("type" => "varchar(50)", "label" => "Trackingnumber", "enabled" => "1", 'position' => 170, 'notnull' => 0, "visible" => "-1",),
+		"fk_entrepot" => array("type" => "integer:Entrepot:product/stock/class/entrepot.class.php", "label" => "Warehouse", "enabled" => "1", 'position' => 175, 'notnull' => -1, "visible" => 1),
+		"stock_mode" => array("type" => "int", "label" => "StockMode", "enabled" => "1", 'position' => 180, 'notnull' => 0, "visible" => "-1",'arrayofkeyval'=>array('0'=>'Off', '1'=>'PartualStock', '2'=>'FullStock',)),
 	);
 
 	/**
@@ -264,7 +266,16 @@ class MasterShipment extends CommonObject
 	 * @var string
 	 */
 	public $tracking_number;
-
+	/**
+	 * Warehouse
+	 * @var int
+	 */
+	public $fk_entrepot;
+	/**
+	 * Stock mode
+	 * @var int
+	 */
+	public $stock_mode;
 
 	/**
 	 * @var string    Name of subtable line
@@ -2662,15 +2673,21 @@ class MasterShipmentLine extends CommonObjectLine
 	/**
 	 *  Return the best warehouse to pick or load the line depending on the quantity to pick/load and the stock of warehouses.
 	 *  @param  Product $product   Product object of the line
+	 *  @param  int|null $fk_entrepot   Id of warehouse to force to pick/load from (can be null to not force any warehouse)
 	 *
 	 *  @return stdClass             best warehouse stock object with properties 'id' and 'real' (real stock) or null if no warehouse found
 	 */
-	public function getBestWarehouse($product)
+	public function getBestWarehouse($product, $fk_entrepot = null)
 	{
 		if (!empty($this->fk_product)) {
 			$product->load_stock('novirtual');
 			if (!empty($product->stock_warehouse)) {
-				// First try to find a warehouse with enough stock to pick/load whole quantity
+				// If a warehouse is forced and has stock to pick/load
+				if (!empty($fk_entrepot) && isset($product->stock_warehouse[$fk_entrepot]) && !empty($product->stock_warehouse[$fk_entrepot]->real)) {
+					$product->stock_warehouse[$fk_entrepot]->fk_entrepot = $fk_entrepot;
+					return $product->stock_warehouse[$fk_entrepot];
+				}
+				// Try to find a warehouse with enough stock to pick/load whole quantity
 				foreach ($product->stock_warehouse as $warehouse => $stock) {
 					if (!empty($stock->real) && $stock->real >= $this->qty) {
 						$stock->fk_entrepot = $warehouse;
