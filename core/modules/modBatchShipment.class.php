@@ -370,7 +370,6 @@ class modBatchShipment extends DolibarrModules
 			'object' => 'MasterShipment'
 		);
 
-		/*
 		$this->menu[$r++] = array(
 			'fk_menu' => 'fk_mainmenu=products,fk_leftmenu=mastershipment',
 			'type' => 'left',
@@ -385,7 +384,7 @@ class modBatchShipment extends DolibarrModules
 			'target' => '',
 			'user' => 2,
 			'object' => 'MasterShipment'
-		);*/
+		);
 		/* END MODULEBUILDER LEFTMENU MASTERSHIPMENT */
 
 
