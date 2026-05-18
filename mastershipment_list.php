@@ -669,6 +669,8 @@ foreach ($object->fields as $key => $val) {
 			print $formadmin->select_language((isset($search[$key]) ? $search[$key] : ''), 'search_lang', 0, array(), 1, 0, 0, 'minwidth100imp maxwidth125', 2);
 		} elseif ($val['type'] === 'boolean') {
 			print $form->selectyesno('search_' . $key, $search[$key] ?? '', 1, false, 1);
+		} elseif ($key == 'fk_shipping_method') {
+			print $form->selectShippingMethod(isset($search[$key]) ? $search[$key] : '', 'search_fk_shipping_method', '', 1, '', 1);
 		} else {
 			print '<input type="text" class="flat maxwidth'.(in_array($val['type'], array('integer', 'price')) ? '50' : '75').'" name="search_'.$key.'" value="'.dol_escape_htmltag(isset($search[$key]) ? $search[$key] : '').'">';
 		}
@@ -849,6 +851,8 @@ while ($i < $imaxinloop) {
 					print $object->getLibStatut(5);
 				} elseif ($key == 'rowid') {
 					print $object->showOutputField($val, $key, (string) $object->id, '');
+				} elseif ($key == 'fk_shipping_method') {
+					print $form->formSelectShippingMethod('', $object->$key, 'none', 1);
 				} else {
 					if ($val['type'] == 'html') {
 						print '<div class="small lineheightsmall twolinesmax-normallineheight">';

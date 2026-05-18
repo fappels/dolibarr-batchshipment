@@ -696,6 +696,12 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	//unset($object->fields['fk_soc']);					// Hide field already shown in banner
 	include DOL_DOCUMENT_ROOT.'/core/tpl/commonfields_view.tpl.php';
 
+	// Shipping method
+	if ($object->fk_shipping_method) {
+		print '<tr><td class="titlefield">'.$langs->trans("ShippingMethod").'</td><td colspan="3">';
+		$form->formSelectShippingMethod('', $object->fk_shipping_method, 'none', 1);
+		print '</td></tr>';
+	}
 	// Tracking URL
 	if ($object->tracking_url) {
 		print '<tr><td class="titlefield">'.$langs->trans("TrackingUrl").'</td><td colspan="3">';
