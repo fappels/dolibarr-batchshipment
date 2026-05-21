@@ -219,7 +219,7 @@ class ActionsBatchShipment extends CommonHookActions
 								setEventMessages($langs->trans('NotAddedToMasterShipment', $order->ref), null, 'warnings');
 							}
 							// sort mastershipment lines by product
-							$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
+							$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC'), array('sortfield' => 'qty', 'sortorder' => 'DESC')));
 						} else {
 							$error++;
 							$this->errors[] = 'You can only add to a master shipment from a validated order or partial delivered order.';
@@ -306,7 +306,7 @@ class ActionsBatchShipment extends CommonHookActions
 									setEventMessages($langs->trans('NotAddedToMasterShipment', $order->ref), null, 'warnings');
 								}
 								// sort mastershipment lines by product
-								$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
+								$mastershipment->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC'), array('sortfield' => 'qty', 'sortorder' => 'DESC')));
 							} else {
 								$error++;
 								$this->errors[] = 'You can only add to a master shipment from a validated or or partial delivered order.';
@@ -1078,7 +1078,7 @@ class ActionsBatchShipment extends CommonHookActions
 							$product->fetch($objectLine->fk_product);
 							$mastershipmentLine->qty = $qty; // set before addLine to be able to use it in getBestWarehouse and getBestLot
 							$mastershipmentLine->fk_product = $product->id;
-							$stockObject = $mastershipmentLine->getBestWarehouse($product, $mastershipment->fk_entrepot);
+							$stockObject = $mastershipmentLine->getBestWarehouse($product, $qty, $mastershipment->fk_entrepot);
 							if ($stockObject) {
 								if ($stockObject->real < $qty && $mastershipment->stock_mode == 2) {
 									$addLine = false;
@@ -1107,7 +1107,8 @@ class ActionsBatchShipment extends CommonHookActions
 								if ($stockObject) {
 									$mastershipmentLine->fk_entrepot = $stockObject->fk_entrepot;
 									if ($product->hasbatch()) {
-										$mastershipmentLine->fk_productbatch = $mastershipmentLine->getBestLot($stockObject);
+										$batch = $mastershipmentLine->getBestLot($stockObject);
+										$mastershipmentLine->fk_productbatch = $batch ? $batch->id : 0;
 									}
 									$mastershipmentLine->update($user);
 								} elseif ($mastershipment->fk_entrepot > 0) {

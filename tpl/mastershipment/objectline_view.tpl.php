@@ -21,7 +21,6 @@
  * $forceall (0 by default, 1 for supplier invoices/orders)
  * $element     (used to test $user->rights->$element->creer)
  * $permtoedit  (used to replace test $user->rights->$element->creer)
- * $inputalsopricewithtax (0 by default, 1 to also show column with unit price including tax)
  * $object_rights->creer initialized from = $object->getRights()
  * $disableedit, $disablemove, $disableremove
  *
@@ -38,22 +37,19 @@ if (empty($object) || !is_object($object)) {
 
 /**
  * @var mixed $forceall
- * @var int $senderissupplier
- * @var mixed $inputalsopricewithtax
- * @var mixed $outputalsopricetotalwithtax
  * @var mixed $permissiontoadd
  * @var FormProduct $formproduct
  * @var int $i
  * @var Translate $langs
  */
 
-global $forceall, $senderissupplier, $inputalsopricewithtax, $outputalsopricetotalwithtax, $permissiontoadd, $formproduct;
+global $forceall, $permissiontoadd, $formproduct, $stockUsedForProduct;
 
 if (empty($dateSelector)) $dateSelector = 0;
 if (empty($forceall)) $forceall = 0;
-if (empty($senderissupplier)) $senderissupplier = 0;
-if (empty($inputalsopricewithtax)) $inputalsopricewithtax = 0;
-if (empty($outputalsopricetotalwithtax)) $outputalsopricetotalwithtax = 0;
+if (empty($stockUsedForProduct) && !empty($line->fk_product)) {
+	$stockUsedForProduct[$line->fk_product] = 0;
+}
 
 $disablemove = 1; // TODO debug line move
 
@@ -183,7 +179,7 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay = $coldisplay + 1;
 } else {
 	if ($line->fk_product > 0) {
-		$stockObject = $line->getBestWarehouse($product, $object->fk_entrepot);
+		$stockObject = $line->getBestWarehouse($product, $line->qty + $stockUsedForProduct[$line->fk_product], $object->fk_entrepot);
 	} else {
 		$stockObject = null;
 	}
@@ -234,7 +230,16 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
 			} elseif (isset($stockObject)) {
-				$selectedBatch = $line->getBestLot($stockObject);
+				$batch = $line->getBestLot($stockObject);
+				$stockObject = null; // to not use stock object anymore for stock used calculation as we will use batch object which is more precise
+				$selectedBatch = $batch ? $batch->id : 0;
+				if ($batch) {
+					if ($batch->qty < $line->qty) {
+						$stockUsedForProduct[$line->fk_product] += $batch->qty;
+					} else {
+						$stockUsedForProduct[$line->fk_product] += $line->qty;
+					}
+				}
 			} else {
 				$selectedBatch = 0;
 			}
@@ -247,6 +252,13 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 			print '<input type="hidden" name="fk_productbatch['.($i + 1).']" value="'.$line->fk_productbatch.'">';
 		}
 		print '</td>';
+	}
+	if ($stockObject) {
+		if ($stockObject->real < $line->qty) {
+			$stockUsedForProduct[$line->fk_product] += $stockObject->real;
+		} else {
+			$stockUsedForProduct[$line->fk_product] += $line->qty;
+		}
 	}
 	$coldisplay++;
 	if ($object->status == MasterShipment::STATUS_VALIDATED) {

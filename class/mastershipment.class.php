@@ -720,7 +720,7 @@ class MasterShipment extends CommonObject
 			}
 			// sort mastershipment lines by product
 			if ($result > 0) {
-				$this->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC')));
+				$this->sortLines($user, array(array('sortfield' => 'fk_product', 'sortorder' => 'ASC'), array('sortfield' => 'qty', 'sortorder' => 'DESC')));
 			}
 		}
 		return $result;
@@ -2671,25 +2671,49 @@ class MasterShipmentLine extends CommonObjectLine
 	}
 
 	/**
-	 *  Return the best warehouse to pick or load the line depending on the quantity to pick/load and the stock of warehouses.
-	 *  @param  Product $product   Product object of the line
+	 *  Return the best warehouse to pick or load depending on the quantity to pick/load and the stock of warehouses.
+	 *  @param  Product $product   Product object
+	 *  @param  float $neededQty    Quantity to pick/load
 	 *  @param  int|null $fk_entrepot   Id of warehouse to force to pick/load from (can be null to not force any warehouse)
 	 *
 	 *  @return stdClass             best warehouse stock object with properties 'id' and 'real' (real stock) or null if no warehouse found
 	 */
-	public function getBestWarehouse($product, $fk_entrepot = null)
+	public function getBestWarehouse($product, $neededQty = 0, $fk_entrepot = null)
 	{
-		if (!empty($this->fk_product)) {
-			$product->load_stock('novirtual');
-			if (!empty($product->stock_warehouse)) {
-				// If a warehouse is forced and has stock to pick/load
-				if (!empty($fk_entrepot) && isset($product->stock_warehouse[$fk_entrepot]) && !empty($product->stock_warehouse[$fk_entrepot]->real)) {
+		$product->load_stock('novirtual');
+		$warehouse = new Entrepot($this->db);
+		if (!empty($product->stock_warehouse)) {
+			// If a warehouse is forced and has stock to pick/load
+			if (!empty($fk_entrepot)) {
+				// if warehouse has child warehouse
+				$warehouse->fetch($fk_entrepot);
+				$childWarehouses = array();
+				$childWarehouses = $warehouse->get_children_warehouses($fk_entrepot, $childWarehouses);
+				if (is_array($childWarehouses) && count($childWarehouses) > 0) {
+					// we add the forced warehouse in first position of array to check it first
+					array_unshift($childWarehouses, $fk_entrepot);
+					//we check if one has matching stock to pick/load whole quantity
+					foreach ($childWarehouses as $childWarehouse) {
+						if (isset($product->stock_warehouse[$childWarehouse]) && !empty($product->stock_warehouse[$childWarehouse]->real) && $product->stock_warehouse[$childWarehouse]->real >= $neededQty) {
+							$product->stock_warehouse[$childWarehouse]->fk_entrepot = $childWarehouse;
+							return $product->stock_warehouse[$childWarehouse];
+						}
+					}
+					//we check if one has stock to pick/load whole quantity
+					foreach ($childWarehouses as $childWarehouse) {
+						if (isset($product->stock_warehouse[$childWarehouse]) && !empty($product->stock_warehouse[$childWarehouse]->real) && $product->stock_warehouse[$childWarehouse]->real > 0) {
+							$product->stock_warehouse[$childWarehouse]->fk_entrepot = $childWarehouse;
+							return $product->stock_warehouse[$childWarehouse];
+						}
+					}
+				} else {
 					$product->stock_warehouse[$fk_entrepot]->fk_entrepot = $fk_entrepot;
 					return $product->stock_warehouse[$fk_entrepot];
 				}
+			} elseif (empty($fk_entrepot)) {
 				// Try to find a warehouse with enough stock to pick/load whole quantity
 				foreach ($product->stock_warehouse as $warehouse => $stock) {
-					if (!empty($stock->real) && $stock->real >= $this->qty) {
+					if (!empty($stock->real) && $stock->real >= $neededQty) {
 						$stock->fk_entrepot = $warehouse;
 						return $stock;
 					}
@@ -2712,7 +2736,7 @@ class MasterShipmentLine extends CommonObjectLine
 	 *  @param  stdClass $stockObject   Stock object of the warehouse to pick/load (object with properties 'id' and 'real')
 	 *  @param  string $mode            'fifo' or 'bestfit'
 	 *
-	 *  @return int|null                 Id of best lot/batch or null if no lot/batch found
+	 *  @return ProductBatch|null                 Best lot/batch or null if no lot/batch found
 	 */
 	public function getBestLot($stockObject, $mode = 'fifo')
 	{
@@ -2722,18 +2746,17 @@ class MasterShipmentLine extends CommonObjectLine
 		$productbatch = new ProductBatch($this->db);
 		$conf->global->SHIPPING_DISPLAY_STOCK_ENTRY_DATE = 1; // We want to sort by entry date to pick/load first the oldest lot/batch
 		$result = $productbatch->findAll($this->db, $stockObject->id, 1, $this->fk_product);
-		$id = 0;
+		$batch = null;
 		if (is_array($result) && count($result) > 0) {
 			foreach ($result as $batch) {
 				$stock_entry_date = $batch->context['stock_entry_date'];
-				$id = $batch->id;
 				if ($mode == 'fifo') break; // we take the first lot/batch with stock to pick/load whole quantity
 				if (!empty($batch->qty) && $batch->qty >= $this->qty) {
 					break; // best fit lot/batch found with enough stock to pick/load whole quantity
 				}
 			}
 		}
-		return $id;
+		return $batch;
 	}
 
 	/**
