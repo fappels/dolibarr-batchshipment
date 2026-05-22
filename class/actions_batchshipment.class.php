@@ -1107,7 +1107,7 @@ class ActionsBatchShipment extends CommonHookActions
 								if ($stockObject) {
 									$mastershipmentLine->fk_entrepot = $stockObject->fk_entrepot;
 									if ($product->hasbatch()) {
-										$batch = $mastershipmentLine->getBestLot($stockObject);
+										$batch = $mastershipmentLine->getBestLot($stockObject, $qty);
 										$mastershipmentLine->fk_productbatch = $batch ? $batch->id : 0;
 									}
 									$mastershipmentLine->update($user);

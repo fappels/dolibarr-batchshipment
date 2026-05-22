@@ -43,12 +43,15 @@ if (empty($object) || !is_object($object)) {
  * @var Translate $langs
  */
 
-global $forceall, $permissiontoadd, $formproduct, $stockUsedForProduct;
+global $forceall, $permissiontoadd, $formproduct, $stockUsedForProduct, $stockUsedForBatch;
 
 if (empty($dateSelector)) $dateSelector = 0;
 if (empty($forceall)) $forceall = 0;
 if (empty($stockUsedForProduct) && !empty($line->fk_product)) {
 	$stockUsedForProduct[$line->fk_product] = 0;
+}
+if (empty($stockUsedForBatch) && !empty($line->fk_productbatch)) {
+	$stockUsedForBatch[$line->fk_productbatch] = 0;
 }
 
 $disablemove = 1; // TODO debug line move
@@ -230,14 +233,16 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
 			} elseif (isset($stockObject)) {
-				$batch = $line->getBestLot($stockObject);
+				$batch = $line->getBestLot($stockObject, $line->qty + $stockUsedForBatch[$line->fk_productbatch]);
 				$stockObject = null; // to not use stock object anymore for stock used calculation as we will use batch object which is more precise
 				$selectedBatch = $batch ? $batch->id : 0;
 				if ($batch) {
 					if ($batch->qty < $line->qty) {
 						$stockUsedForProduct[$line->fk_product] += $batch->qty;
+						$stockUsedForBatch[$batch->id] += $batch->qty;
 					} else {
 						$stockUsedForProduct[$line->fk_product] += $line->qty;
+						$stockUsedForBatch[$batch->id] += $line->qty;
 					}
 				}
 			} else {

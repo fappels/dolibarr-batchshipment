@@ -2671,6 +2671,22 @@ class MasterShipmentLine extends CommonObjectLine
 	}
 
 	/**
+	 * Split line in database for multi warehouse and/or multi lot/batch picking/loading
+	 */
+	public function splitLine()
+	{
+		// TODO split line in database for multi warehouse and/or multi lot/batch picking/loading
+	}
+
+	/**
+	 * merge lines in database which have been split before
+	 */
+	public function mergeLine()
+	{
+		// TODO merge lines in database which have been split before
+	}
+
+	/**
 	 *  Return the best warehouse to pick or load depending on the quantity to pick/load and the stock of warehouses.
 	 *  @param  Product $product   Product object
 	 *  @param  float $neededQty    Quantity to pick/load
@@ -2734,11 +2750,12 @@ class MasterShipmentLine extends CommonObjectLine
 	/**
 	 *  Return the best lot/batch to pick or load the line depending on the quantity to pick/load and the stock of lots/batches.
 	 *  @param  stdClass $stockObject   Stock object of the warehouse to pick/load (object with properties 'id' and 'real')
+	 *  @param  float $neededQty        Quantity needed to pick/load
 	 *  @param  string $mode            'fifo' or 'bestfit'
 	 *
 	 *  @return ProductBatch|null                 Best lot/batch or null if no lot/batch found
 	 */
-	public function getBestLot($stockObject, $mode = 'fifo')
+	public function getBestLot($stockObject, $neededQty = 0, $mode = 'fifo')
 	{
 		// TODO split lines if not enough stock in one lot/batch to pick/load whole quantity
 		global $conf;
@@ -2751,7 +2768,7 @@ class MasterShipmentLine extends CommonObjectLine
 			foreach ($result as $batch) {
 				$stock_entry_date = $batch->context['stock_entry_date'];
 				if ($mode == 'fifo') break; // we take the first lot/batch with stock to pick/load whole quantity
-				if (!empty($batch->qty) && $batch->qty >= $this->qty) {
+				if (!empty($batch->qty) && $batch->qty >= $neededQty) {
 					break; // best fit lot/batch found with enough stock to pick/load whole quantity
 				}
 			}
