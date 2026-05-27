@@ -1418,7 +1418,7 @@ class MasterShipment extends CommonObject
 		}
 
 		if (is_array($linesChecked) && count($linesChecked) > 0) {
-			// update picked qty fields for master shipment
+			// update qty, warehouse and product batch fields for master shipment
 			foreach ($linesChecked as $key=>$lineId) {
 				$line = new MasterShipmentLine($this->db);
 				$result = $line->fetch($lineId);
@@ -1437,6 +1437,142 @@ class MasterShipment extends CommonObject
 					);
 					if ($result < 0) {
 						$error++;
+						break;
+					}
+				} else {
+					$error++;
+					$this->errors[] = $line->error;
+					break;
+				}
+			}
+		}
+
+		if (!$error) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
+
+	/**
+	 * merge lines
+	 *
+	 * @param User $user Object user that merge line
+	 * @param array $linesChecked lines to merge
+	 * @param array $qtysToGroup qty's to merge
+	 * @param array $warehouses warehouses for merge
+	 * @param	array	$productBatches	product batch id's for merge
+	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
+	 */
+	public function mergeLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatches)
+	{
+		$error = 0;
+
+		// Protection
+		if ($this->status != self::STATUS_DRAFT) {
+			return 0;
+		}
+
+		if (is_array($linesChecked) && count($linesChecked) > 0) {
+			// merge lines in database
+			$orderLineId = 0;
+			$lineToKeepId = 0;
+			$warehouseToKeepId = 0;
+			$batchToKeepId = 0;
+			$totalQty = 0;
+			foreach ($linesChecked as $key=>$lineId) {
+				$line = new MasterShipmentLine($this->db);
+				$result = $line->fetch($lineId);
+				if ($result > 0) {
+					$totalQty += $qtysToGroup[$key];
+					if (empty($lineToKeepId)) {
+						$lineToKeepId = $lineId;
+						$warehouseToKeepId = $warehouses[$key];
+						$batchToKeepId = isset($productBatches[$key]) ? $productBatches[$key] : 0;
+					}
+					if (!empty($orderLineId) && $line->fk_commande_line != $orderLineId) {
+						$error++;
+						$this->errors[] = 'Lines must be from same order line to be merged';
+						break;
+					} elseif ($line->id != $lineToKeepId) {
+						$result = $line->delete($user);
+						if ($result < 0) {
+							$error++;
+							$this->errors[] = $line->error;
+							break;
+						}
+					} else {
+						$orderLineId = $line->fk_commande_line;
+					}
+				} else {
+					$error++;
+					$this->errors[] = $line->error;
+					break;
+				}
+			}
+			if ($lineToKeepId > 0 && !$error) {
+				$line = new MasterShipmentLine($this->db);
+				$result = $line->fetch($lineToKeepId);
+				if ($result > 0) {
+					$result = $this->updateLine($user,
+						$lineToKeepId,
+						MasterShipmentLine::STATUS_DRAFT,
+						$line->fk_product,
+						$totalQty,
+						0,
+						$line->fk_commande,
+						$warehouseToKeepId,
+						0,
+						'',
+						$batchToKeepId
+					);
+					if ($result < 0) {
+						$error++;
+						$this->errors[] = $line->error;
+					}
+				}
+				if ($result < 0) {
+					$error++;
+					$this->errors[] = $line->error;
+				}
+			}
+		}
+
+		if (!$error) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
+
+	/**
+	 * split lines in database
+	 *
+	 * @param User $user Object user that split line
+	 * @param array $linesChecked lines to split
+	 * @param array $qtysToSplit qty to split for each line
+	 * @param array $warehouses warehouse to split for each line
+	 * @param	array	$productBatches	product batch id's for split
+	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
+	 */
+	public function splitLines($user, $linesChecked, $qtysToSplit, $warehouses, $productBatches)
+	{
+		$error = 0;
+
+		// Protection
+		if ($this->status != self::STATUS_DRAFT) {
+			return 0;
+		}
+
+		if (is_array($linesChecked) && count($linesChecked) > 0) {
+			foreach ($linesChecked as $key=>$lineId) {
+				$line = new MasterShipmentLine($this->db);
+				$result = $line->fetch($lineId);
+				if ($result > 0) {
+					$result = $line->split($user, price2num($qtysToSplit[$key]), $warehouses[$key], isset($productBatches[$key]) ? $productBatches[$key] : 0);
+					if ($result < 0) {
+						$error++;
+						$this->errors[] = $line->error;
 						break;
 					}
 				} else {
@@ -2672,18 +2808,41 @@ class MasterShipmentLine extends CommonObjectLine
 
 	/**
 	 * Split line in database for multi warehouse and/or multi lot/batch picking/loading
+	 * @param User $user Object user that split line
+	 * @param float $qtyToSplit Quantity to split on line (must be >0 and < current line quantity)
+	 * @param int $warehouse Id of warehouse to split line (can be null if we
+	 * @param int $lotbatch Id of lot/batch to split line (can be null if we
+	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
 	 */
-	public function splitLine()
+	public function split($user, $qtyToSplit, $warehouse, $lotbatch)
 	{
-		// TODO split line in database for multi warehouse and/or multi lot/batch picking/loading
-	}
+		$error = 0;
 
-	/**
-	 * merge lines in database which have been split before
-	 */
-	public function mergeLine()
-	{
-		// TODO merge lines in database which have been split before
+		$newLine = clone $this;
+		$newLine->id = 0;
+		$newLine->qty = $qtyToSplit / 2;
+		$newLine->fk_entrepot = $warehouse;
+		$newLine->fk_productbatch = $lotbatch;
+		$result = $newLine->create($user);
+		if ($result < 0) {
+			$error++;
+			$this->errors = array_merge($this->errors, $newLine->errors);
+		} else {
+			$this->qty = $qtyToSplit / 2;
+			$this->fk_entrepot = $warehouse;
+			$this->fk_productbatch = $lotbatch;
+			$result = $this->update($user);
+			if ($result < 0) {
+				$error++;
+				$this->errors = array_merge($this->errors, $newLine->errors);
+			}
+		}
+
+		if ($error) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 
 	/**

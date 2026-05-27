@@ -121,10 +121,16 @@ if (!$nolinesbefore) {
 		$colspan -= 1; // nbr of button
 	} elseif ($this->status == MasterShipment::STATUS_DRAFT) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
-		print '<input type="submit" class="button" value="'.$langs->trans('Group').'" name="group" id="groupbutton">';
+		print '<input type="submit" class="button" value="'.$langs->trans('Split').'" name="split" id="splitbutton">';
+		print '</td>';
+		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
+		print '<input type="submit" class="button" value="'.$langs->trans('MergeLines').'" name="merge" id="mergebutton">';
+		print '</td>';
+		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
+		print '<input type="submit" class="button" value="'.$langs->trans('SetLines').'" name="group" id="groupbutton">';
 		print '</td>';
 		$colspan -= $beforeSubmitButtonColspan;
-		$colspan -= 1; // nbr of button
+		$colspan -= 3; // nbr of button
 	}
 	print '<td class="bordertop nobottom linecoledit right valignmiddle" colspan="'.$colspan.'"></td>';
 }

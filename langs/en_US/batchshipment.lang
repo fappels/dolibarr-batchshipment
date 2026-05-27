@@ -90,6 +90,9 @@ PartualStock = Partual Stock
 FullStock = Full Stock
 NotAddedToMasterShipment = %s not added to Mastershipment
 AddedToMasterShipment = %s added to Mastershipment
+SetLines = Set
+Split = Split line(s)
+MergeLines = Merge lines
 
 #
 # Sample widget

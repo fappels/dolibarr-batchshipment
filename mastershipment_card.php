@@ -225,6 +225,10 @@ if (empty($reshook)) {
 		$warehouses = GETPOST('fk_entrepot', 'array');
 		if (GETPOST('group')) {
 			$result = $object->group($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
+		} elseif (GETPOST('split')) {
+			$result = $object->splitLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
+		} elseif (GETPOST('merge')) {
+			$result = $object->mergeLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		}
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
