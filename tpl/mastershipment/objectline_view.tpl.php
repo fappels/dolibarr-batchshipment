@@ -176,7 +176,7 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	print '<td>';
 	if ($line->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
-		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=undocheck&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=undocheck&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
 	}
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
@@ -305,9 +305,9 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay++;
 	print '<td>';
 	if ($line->status == MasterShipmentLine::STATUS_PICKED) {
-		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=undoline&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=undoline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
 	} elseif ($line->status == MasterShipmentLine::STATUS_DRAFT) {
-		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=deleteline&amp;lineid='.$line->id.'">'. img_delete('Delete', 0, 'style="max-width: 20px"') .'</a>';
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=deleteline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_delete('Delete', 0, 'style="max-width: 20px"') .'</a>';
 	}
 	//print;
 	print '</td>';
