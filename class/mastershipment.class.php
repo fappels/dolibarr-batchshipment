@@ -71,6 +71,8 @@ class MasterShipment extends CommonObject
 	 */
 	public $ismultientitymanaged = 1;
 
+	/** @var array */
+	public $usedLotBatch = array();
 
 	const STATUS_DRAFT = 0;
 	const STATUS_VALIDATED = 1;
@@ -1569,7 +1571,7 @@ class MasterShipment extends CommonObject
 				$line = new MasterShipmentLine($this->db);
 				$result = $line->fetch($lineId);
 				if ($result > 0) {
-					$result = $line->split($user, price2num($qtysToSplit[$key]), $warehouses[$key], isset($productBatches[$key]) ? $productBatches[$key] : 0);
+					$result = $line->split($user, $this, price2num($qtysToSplit[$key]), $warehouses[$key], isset($productBatches[$key]) ? $productBatches[$key] : 0);
 					if ($result < 0) {
 						$error++;
 						$this->errors[] = $line->error;
@@ -2295,6 +2297,22 @@ class MasterShipment extends CommonObject
 
 		$objectline = new MasterShipmentLine($this->db);
 		$result = $objectline->fetchAll('ASC', 'position', 0, 0, '(fk_mastershipment:=:'.((int) $this->id).')');
+		$stockUsedForBatch = array();
+		foreach ($result as $line) {
+			if (!empty($line->fk_productbatch)) {
+				$batch = new ProductBatch($this->db);
+				$batch->fetch($line->fk_productbatch);
+
+				if ($batch->qty < $line->qty) {
+					$stockUsedForBatch[$batch->id] += $batch->qty;
+				} else {
+					$stockUsedForBatch[$batch->id] += $line->qty;
+				}
+				if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
+					$this->usedLotBatch[$batch->id] = $batch->id;
+				}
+			}
+		}
 
 		if (is_numeric($result)) {
 			$this->setErrorsFromObject($objectline);
@@ -2680,7 +2698,7 @@ class MasterShipmentLine extends CommonObjectLine
 		$this->db = $db;
 	}
 
-		/**
+	/**
 	 * Create object into database
 	 *
 	 * @param  User $user      User that creates
@@ -2809,35 +2827,116 @@ class MasterShipmentLine extends CommonObjectLine
 	/**
 	 * Split line in database for multi warehouse and/or multi lot/batch picking/loading
 	 * @param User $user Object user that split line
+	 * @param MasterShipment $masterShipment Object master shipment to which line belongs
 	 * @param float $qtyToSplit Quantity to split on line (must be >0 and < current line quantity)
 	 * @param int $warehouse Id of warehouse to split line (can be null if we
 	 * @param int $lotbatch Id of lot/batch to split line (can be null if we
 	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
 	 */
-	public function split($user, $qtyToSplit, $warehouse, $lotbatch)
+	public function split($user, $masterShipment, $qtyToSplit, $warehouse, $lotbatch)
 	{
 		$error = 0;
 
 		$newLine = clone $this;
 		$newLine->id = 0;
-		$newLine->qty = $qtyToSplit / 2;
+		$this->fk_entrepot = $warehouse;
+		$this->fk_productbatch = $lotbatch;
 		$newLine->fk_entrepot = $warehouse;
 		$newLine->fk_productbatch = $lotbatch;
-		$result = $newLine->create($user);
-		if ($result < 0) {
-			$error++;
-			$this->errors = array_merge($this->errors, $newLine->errors);
-		} else {
+		// get best split qty depending on stock of warehouse and lot/batch
+		$stockObject = null;
+		$product = new Product($this->db);
+		if (!empty($warehouse) && $this->fk_product) {
+			$product->fetch($this->fk_product);
+			$stockObject = $this->getBestWarehouse($product, $qtyToSplit, $warehouse);
+		}
+		if (empty($stockObject)) {
 			$this->qty = $qtyToSplit / 2;
-			$this->fk_entrepot = $warehouse;
+			$newLine->qty = $qtyToSplit / 2;
+		} elseif (!empty($lotbatch) && $product->status_batch == 2) {
+			// serial numeber case, we must split line by serial number
+			$this->qty = 1;
 			$this->fk_productbatch = $lotbatch;
-			$result = $this->update($user);
+			$newLine->qty = 1;
+			$qtyToSplit = $qtyToSplit - 1;
+			$masterShipment->usedLotBatch[$lotbatch] = $lotbatch;
+			 // find best remainder batch/lot to split remaining quantity
+			$productBatch2 = $this->getBestLot($stockObject, $qtyToSplit, $masterShipment->usedLotBatch);
+			if (!empty($productBatch2) && $productBatch2->qty > 0) {
+				$newLine->fk_productbatch = $productBatch2->id;
+			} else {
+				$newLine->fk_productbatch = -1;
+				$newLine->qty = $qtyToSplit;
+			}
+			if ($newLine->fk_productbatch > 0 && $qtyToSplit > 1) {
+				// split all remaining quantity
+				$result = $newLine->split($user, $masterShipment, $qtyToSplit, $warehouse, $newLine->fk_productbatch);
+				if ($result < 0) {
+					$error++;
+					$this->errors = array_merge($this->errors, $newLine->errors);
+				}
+			}
+		} elseif (!empty($lotbatch)) {
+			$productBatch = new ProductBatch($this->db);
+			$productBatch->fetch($lotbatch);
+			if (!empty($productBatch) && $productBatch->qty > 0 && $productBatch->qty < $qtyToSplit) {
+				$this->qty = $productBatch->qty;
+				$this->fk_productbatch = $productBatch->id;
+				$masterShipment->usedLotBatch[$lotbatch] = $lotbatch;
+				// find best remainder batch/lot to split remaining quantity
+				$productBatch2 = $this->getBestLot($stockObject, $qtyToSplit - $productBatch->qty, $masterShipment->usedLotBatch);
+				if (!empty($productBatch2) && $productBatch2->qty >= $qtyToSplit - $productBatch->qty) {
+					$newLine->qty = $qtyToSplit - $productBatch->qty;
+					$newLine->fk_productbatch = $productBatch2->id;
+				} elseif (!empty($productBatch2) && $productBatch2->qty > 0) {
+					$newLine->qty = $qtyToSplit - $productBatch->qty;
+					$newLine->fk_productbatch = $productBatch2->id;
+				} else {
+					$newLine->qty = $qtyToSplit - $productBatch->qty;
+					$newLine->fk_productbatch = -1;
+				}
+			} elseif (!empty($productBatch) && $productBatch->qty >= $qtyToSplit) {
+				$this->qty = $qtyToSplit / 2;
+				$this->fk_productbatch = $productBatch->id;
+				$newLine->qty = $qtyToSplit / 2;
+				$newLine->fk_productbatch = $productBatch->id;
+			}
+		} elseif (!empty($stockObject)) {
+			if ($stockObject->real > 0 && $stockObject->real < $qtyToSplit) {
+				$this->qty = $stockObject->real;
+				// find best remainder warehouse to split remaining quantity
+				$stockObject2 = $this->getBestWarehouse($product, $qtyToSplit - $stockObject->real, null, array($stockObject->fk_entrepot));
+				if (!empty($stockObject2) && $stockObject2->real > 0) {
+					$newLine->qty = $qtyToSplit - $stockObject->real;
+					$newLine->fk_entrepot = $stockObject2->fk_entrepot;
+				} else {
+					$newLine->qty = $qtyToSplit - $stockObject->real;
+					$newLine->fk_entrepot = $stockObject->fk_entrepot;
+				}
+			} elseif ($stockObject->real >= $qtyToSplit) {
+				$this->qty = $qtyToSplit;
+				$this->fk_entrepot = $stockObject->fk_entrepot;
+				$newLine->qty = 0;
+				$newLine->fk_entrepot = $stockObject->fk_entrepot;
+			} elseif ($stockObject->real <= 0) {
+				$split = 2;
+				$this->qty = $qtyToSplit - ($qtyToSplit / $split);
+				$newLine->qty = $qtyToSplit / $split;
+			}
+		}
+		if (!$error) {
+			$result = $newLine->create($user);
 			if ($result < 0) {
 				$error++;
 				$this->errors = array_merge($this->errors, $newLine->errors);
+			} else {
+				$result = $this->update($user);
+				if ($result < 0) {
+					$error++;
+					$this->errors = array_merge($this->errors, $newLine->errors);
+				}
 			}
 		}
-
 		if ($error) {
 			return -1;
 		} else {
@@ -2853,7 +2952,7 @@ class MasterShipmentLine extends CommonObjectLine
 	 *
 	 *  @return stdClass             best warehouse stock object with properties 'id' and 'real' (real stock) or null if no warehouse found
 	 */
-	public function getBestWarehouse($product, $neededQty = 0, $fk_entrepot = null)
+	public function getBestWarehouse($product, $neededQty = 0, $fk_entrepot = null, $warehousestoExclude = array())
 	{
 		$product->load_stock('novirtual');
 		$warehouse = new Entrepot($this->db);
@@ -2888,14 +2987,14 @@ class MasterShipmentLine extends CommonObjectLine
 			} elseif (empty($fk_entrepot)) {
 				// Try to find a warehouse with enough stock to pick/load whole quantity
 				foreach ($product->stock_warehouse as $warehouse => $stock) {
-					if (!empty($stock->real) && $stock->real >= $neededQty) {
+					if (!empty($stock->real) && $stock->real >= $neededQty && !in_array($warehouse, $warehousestoExclude)) {
 						$stock->fk_entrepot = $warehouse;
 						return $stock;
 					}
 				}
 				// If not found, try to find a warehouse with at least some stock to pick/load partially quantity
 				foreach ($product->stock_warehouse as $warehouse => $stock) {
-					if (!empty($stock->real) && $stock->real > 0) {
+					if (!empty($stock->real) && $stock->real > 0 && !in_array($warehouse, $warehousestoExclude)) {
 						$stock->fk_entrepot = $warehouse;
 						return $stock;
 					}
@@ -2910,11 +3009,12 @@ class MasterShipmentLine extends CommonObjectLine
 	 *  Return the best lot/batch to pick or load the line depending on the quantity to pick/load and the stock of lots/batches.
 	 *  @param  stdClass $stockObject   Stock object of the warehouse to pick/load (object with properties 'id' and 'real')
 	 *  @param  float $neededQty        Quantity needed to pick/load
+	 *  @param  array $lotbatchtoExclude Array of lot/batch id to exclude from search (for example because they are already used for other lines of the same pick/load)
 	 *  @param  string $mode            'fifo' or 'bestfit'
 	 *
 	 *  @return ProductBatch|null                 Best lot/batch or null if no lot/batch found
 	 */
-	public function getBestLot($stockObject, $neededQty = 0, $mode = 'fifo')
+	public function getBestLot($stockObject, $neededQty = 0, $lotbatchtoExclude = array(), $mode = 'fifo')
 	{
 		// TODO split lines if not enough stock in one lot/batch to pick/load whole quantity
 		global $conf;
@@ -2922,17 +3022,22 @@ class MasterShipmentLine extends CommonObjectLine
 		$productbatch = new ProductBatch($this->db);
 		$conf->global->SHIPPING_DISPLAY_STOCK_ENTRY_DATE = 1; // We want to sort by entry date to pick/load first the oldest lot/batch
 		$result = $productbatch->findAll($this->db, $stockObject->id, 1, $this->fk_product);
-		$batch = null;
+		$batchFound = null;
 		if (is_array($result) && count($result) > 0) {
 			foreach ($result as $batch) {
 				$stock_entry_date = $batch->context['stock_entry_date'];
+				if (in_array($batch->id, $lotbatchtoExclude)) {
+					continue; // we skip this lot/batch
+				} else {
+					$batchFound = $batch;
+				}
 				if ($mode == 'fifo') break; // we take the first lot/batch with stock to pick/load whole quantity
 				if (!empty($batch->qty) && $batch->qty >= $neededQty) {
 					break; // best fit lot/batch found with enough stock to pick/load whole quantity
 				}
 			}
 		}
-		return $batch;
+		return $batchFound;
 	}
 
 	/**

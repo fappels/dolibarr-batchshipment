@@ -228,6 +228,7 @@ if (empty($reshook)) {
 		if (GETPOST('group')) {
 			$result = $object->group($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} elseif (GETPOST('split')) {
+			$object->getLinesArray(); // to get used lot number
 			$result = $object->splitLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} elseif (GETPOST('merge')) {
 			$result = $object->mergeLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);

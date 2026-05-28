@@ -93,7 +93,7 @@ $qtys = GETPOST('qty_group', 'array');
 $qtysLoaded = GETPOST('qty_load', 'array');
 $qtysPicked = GETPOST('qty_pick', 'array');
 $lotLoaded = GETPOST('fk_productbatch', 'array');
-if ($this->status >= MasterShipment::STATUS_PICKED) {
+if ($object->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay++;
 	print '<td class="linecol">';
 	print $objectline->showOutputField($objectline->fields['fk_commande'], 'fk_commande', $line->fk_commande);
@@ -176,7 +176,7 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	print '<td>';
 	if ($line->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
-		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=undocheck&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=undocheck&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
 	}
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
@@ -235,7 +235,7 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
 			} elseif (isset($stockObject)) {
-				$batch = $line->getBestLot($stockObject, $line->qty + $stockUsedForBatch[$line->fk_productbatch]);
+				$batch = $line->getBestLot($stockObject, $line->qty + $stockUsedForBatch[$line->fk_productbatch], $object->usedLotBatch);
 				$stockObject = null; // to not use stock object anymore for stock used calculation as we will use batch object which is more precise
 				$selectedBatch = $batch ? $batch->id : 0;
 				if ($batch) {
@@ -246,12 +246,20 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 						$stockUsedForProduct[$line->fk_product] += $line->qty;
 						$stockUsedForBatch[$batch->id] += $line->qty;
 					}
+					if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
+						$object->usedLotBatch[$batch->id] = $batch->id;
+					}
 				}
 			} else {
 				$selectedBatch = 0;
 			}
+			if ($selectedBatch < 0) {
+				$showEmptyBatch = 1;
+			} else {
+				$showEmptyBatch = 0;
+			}
 
-			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', 0, 0, $line->fk_product, $line->fk_entrepot);
+			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', $showEmptyBatch, 0, $line->fk_product, $line->fk_entrepot);
 		} else if (empty($line->fk_productbatch)) {
 			print $langs->trans('NA');
 		} else {
@@ -307,9 +315,9 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay++;
 	print '<td>';
 	if ($line->status == MasterShipmentLine::STATUS_PICKED) {
-		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=undoline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=undoline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
 	} elseif ($line->status == MasterShipmentLine::STATUS_DRAFT) {
-		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$this->id.'&amp;action=deleteline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_delete('Delete', 0, 'style="max-width: 20px"') .'</a>';
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=deleteline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_delete('Delete', 0, 'style="max-width: 20px"') .'</a>';
 	}
 	//print;
 	print '</td>';
