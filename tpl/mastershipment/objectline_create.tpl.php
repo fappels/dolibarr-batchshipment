@@ -143,9 +143,17 @@ print '</tr>';
 
 /* JQuery stuff */
 jQuery(document).ready(function() {
+	$(".change-warehouse").change(function() {
 
+		var entrepotid = $(this).val();
+		var line = $(this).closest('tr').data('id');
+		console.log("We have changed the warehouse " + entrepotid + " on line " + line + " - Reload page");
+		// reload page
+		$("input[name=changedline]").val(line);
+		$("input[name=changedwarehouse]").val(entrepotid);
+		$("form[name=draft]").submit();
+	});
 });
-
 </script>
 
 <!-- END PHP TEMPLATE objectline_create.tpl.php -->

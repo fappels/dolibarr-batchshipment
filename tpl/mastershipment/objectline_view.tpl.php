@@ -181,10 +181,12 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
 } else {
+	$stockObject = null;
 	if ($line->fk_product > 0) {
+		// inputs to store changed warehouse
+		print '<input type="hidden" name="changedline" value="">';
+		print '<input type="hidden" name="changedwarehouse" value="">';
 		$stockObject = $line->getBestWarehouse($product, $line->qty + $stockUsedForProduct[$line->fk_product], $object->fk_entrepot);
-	} else {
-		$stockObject = null;
 	}
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
@@ -275,7 +277,7 @@ if ($this->status >= MasterShipment::STATUS_PICKED) {
 
 	if ($line->fk_product > 0) {
 		if ($line->status == MasterShipmentLine::STATUS_DRAFT && $object->status == MasterShipment::STATUS_DRAFT) {
-			print $formproduct->selectWarehouses($line->fk_entrepot, 'fk_entrepot['.($i + 1).']', '', 0, 0, $line->fk_product, '', 1);
+			print $formproduct->selectWarehouses($line->fk_entrepot, 'fk_entrepot['.($i + 1).']', '', 0, 0, $line->fk_product, '', 1, 0, array(), 'minwidth200 change-warehouse');
 		} else {
 			print $objectline->showOutputField($objectline->fields['fk_entrepot'], 'fk_entrepot', $line->fk_entrepot) . (!empty($stockObject->real) ? ' (stock:' . $stockObject->real . ')' : '');
 			print '<input type="hidden" name="fk_entrepot['.($i + 1).']" value="'.$line->fk_entrepot.'">';

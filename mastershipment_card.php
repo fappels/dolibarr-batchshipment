@@ -223,12 +223,23 @@ if (empty($reshook)) {
 		$productBatchToGroup = GETPOST('fk_productbatch', 'array');
 		$qtysToGroup = GETPOST('qty_group', 'array');
 		$warehouses = GETPOST('fk_entrepot', 'array');
+		$changedWarehouse = GETPOST('changedwarehouse', 'int');
+		$changedLine = GETPOST('changedline', 'int');
 		if (GETPOST('group')) {
 			$result = $object->group($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} elseif (GETPOST('split')) {
 			$result = $object->splitLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} elseif (GETPOST('merge')) {
 			$result = $object->mergeLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
+		} else {
+			if ($changedLine > 0 && $changedWarehouse > 0) {
+				$line = new MasterShipmentLine($db);
+				$result = $line->fetch($changedLine);
+				if ($result > 0) {
+					$line->fk_entrepot = $changedWarehouse;
+					$result = $line->update($user);
+				}
+			}
 		}
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
@@ -761,7 +772,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			<input type="hidden" name="id" value="' . $object->id.'">
 			';
 		} else {
-			print '	<form name="dummy" id="dummy" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'" method="POST">
+			print '	<form name="draft" id="draft" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'" method="POST">
 			<input type="hidden" name="token" value="' . newToken().'">
 			<input type="hidden" name="action" value="confirm_group">
 			<input type="hidden" name="confirm" value="yes">
