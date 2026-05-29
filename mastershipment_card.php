@@ -238,6 +238,20 @@ if (empty($reshook)) {
 				$result = $line->fetch($changedLine);
 				if ($result > 0) {
 					$line->fk_entrepot = $changedWarehouse;
+					if (!empty($line->fk_productbatch)) {
+						$product = new Product($db);
+						$product->fetch($line->fk_product);
+						$stockObject = $line->getBestWarehouse($product, $line->qty, $changedWarehouse);
+						if ($stockObject) {
+							$object->getLinesArray(); // to get used lot number
+							$batch = $line->getBestLot($stockObject, $line->qty, $object->usedLotBatch);
+							if (!empty($batch->id)) {
+								$line->fk_productbatch = $batch->id;
+							}
+						} else {
+							$line->fk_productbatch = -1;
+						}
+					}
 					$result = $line->update($user);
 				}
 			}
