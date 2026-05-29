@@ -49,14 +49,14 @@ print '<td class="linecol">'.$langs->trans('Order').'</td>';
 print '<td class="linecolqty right">'.$langs->trans('LineNo').'</td>';
 print '<td class="linecol">'.$langs->trans('DueDate').'</td>';
 print '<td class="linecolqty right">'.$langs->trans('Quantity').'</td>';
-print '<td class="linecolqty right">'.$langs->trans('PickedQuantity').'</td>';
-print '<td class="linecolqty right">'.$langs->trans('LoadedQuantity').'</td>';
+if ($object->status >= MasterShipment::STATUS_VALIDATED) print '<td class="linecolqty right">'.$langs->trans('PickedQuantity').'</td>';
+if ($object->status >= MasterShipment::STATUS_VALIDATED) print '<td class="linecolqty right">'.$langs->trans('LoadedQuantity').'</td>';
 if (!empty($conf->productbatch->enabled)) print '<td class="linecoldescription right">'.$langs->trans('ProductLotBatch').'</td>'; // TODO add eatby/sellby for receptionpackage
 if ($object->status >= MasterShipment::STATUS_VALIDATED) print '<td class="linecolqty right">'.$langs->trans('QtyTake').'</td>';
 print '<td class="linecol">'.$langs->trans('Source').'</td>';
 if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS) print '<td class="linecol">'.$langs->trans('Shipment').'</td>';
 //if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS && isModEnabled('shipmentpackage')) print '<td class="linecol">'.$langs->trans('ShipmentPackage').'</td>';
-print '<td class="linecoldescription right">'.$langs->trans('Comment').'</td>';
+if ($object->status >= MasterShipment::STATUS_VALIDATED) print '<td class="linecoldescription right">'.$langs->trans('Comment').'</td>';
 print '<td class="linecol">' . $langs->trans('Status') . '</td>';
 
 $disabled = '';

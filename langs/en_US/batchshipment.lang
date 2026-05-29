@@ -91,8 +91,8 @@ FullStock = Full Stock
 NotAddedToMasterShipment = %s not added to Mastershipment
 AddedToMasterShipment = %s added to Mastershipment
 SetLines = Set
-Split = Split line(s)
-MergeLines = Merge lines
+Split = Split
+MergeLines = Merge
 
 #
 # Sample widget

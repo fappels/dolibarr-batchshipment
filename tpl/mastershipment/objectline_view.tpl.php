@@ -222,12 +222,14 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		print $line->qty;
 	}
 	print '</td>';
-	$coldisplay++;
-	print '<td class="linecolqty right">' . $line->qty_pick;
-	print '</td>';
-	$coldisplay++;
-	print '<td class="linecolqty right">' . $line->qty_load;
-	print '</td>';
+	if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+		$coldisplay++;
+		print '<td class="linecolqty right">' . $line->qty_pick;
+		print '</td>';
+		$coldisplay++;
+		print '<td class="linecolqty right">' . $line->qty_load;
+		print '</td>';
+	}
 	if (!empty($conf->productbatch->enabled)) {
 		$coldisplay++;
 		print '<td class="linecoldescription right">';
@@ -300,8 +302,10 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	if ($line->status == MasterShipmentLine::STATUS_PICKED) {
 		$disabled = 1;
 	}
-	print '<td class="linecoldescription right">'.$line->comment.'</td>';
-	$coldisplay++;
+	if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+		print '<td class="linecoldescription right">'.$line->comment.'</td>';
+		$coldisplay++;
+	}
 	print '<td class="linecol right">' . $line->getLabelStatus(3) . '</td>';
 	// tick to pick or create shipments
 	$coldisplay++;

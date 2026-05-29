@@ -61,10 +61,12 @@ print '<td class="linecol"></td>';
 $colspan++;
 print '<td class="linecolqty right"></td>';
 $colspan++;
-print '<td class="linecolqty right"></td>';
-$colspan++;
-print '<td class="linecolqty right"></td>';
-$colspan++;
+if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+	print '<td class="linecolqty right"></td>';
+	$colspan++;
+	print '<td class="linecolqty right"></td>';
+	$colspan++;
+}
 if (!empty($conf->productbatch->enabled)) {
 	print '<td class="linecoldescription right"></td>';
 	$colspan++;
@@ -90,9 +92,10 @@ $colspan++;
 
 print '<td class="linecolcheckall center"></td>';
 $colspan++;
-
-print '<td class="linecol"></td>';
-$colspan++;
+if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+	print '<td class="linecol"></td>';
+	$colspan++;
+}
 print '</tr>';
 print '<tr>';
 if (!$nolinesbefore) {
