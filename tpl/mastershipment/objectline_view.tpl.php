@@ -102,8 +102,8 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	$order->fetch($line->fk_commande);
 	if ($order->ref_client) print ' - '.$order->ref_client;
 	print '</td>';
-	$coldisplay++;
-	print '<td class="linecolqty right">' . ($orderLine->rang ? $orderLine->rang : 1);
+//	$coldisplay++;
+//	print '<td class="linecolqty right">' . ($orderLine->rang ? $orderLine->rang : 1);
 	print '</td>';
 	$coldisplay++;
 	print '<td class="linecol">' . ($order->delivery_date ? dol_print_date($order->delivery_date, 'day') : '');
@@ -208,8 +208,8 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	$order->fetch($line->fk_commande);
 	if ($order->ref_client) print ' - '.$order->ref_client;
 	print '</td>';
-	$coldisplay++;
-	print '<td class="linecolqty right">' . ($orderLine->rang ? $orderLine->rang : 1);
+//	$coldisplay++;
+//	print '<td class="linecolqty right">' . ($orderLine->rang ? $orderLine->rang : 1);
 	print '</td>';
 	$coldisplay++;
 	print '<td class="linecol">' . ($order->delivery_date ? dol_print_date($order->delivery_date, 'day') : '');

@@ -45,8 +45,8 @@ print '<tr class="liste_titre nodrag nodrop">';
 // Adds a line numbering column
 if (! empty($conf->global->MAIN_VIEW_LINE_NUMBER)) print '<td class="linecolnum center">&nbsp;</td>';
 print '<td class="linecol maxwidth200">'.$langs->trans('Product').'</td>';
-print '<td class="linecol">'.$langs->trans('Order').'</td>';
-print '<td class="linecolqty right">'.$langs->trans('LineNo').'</td>';
+print '<td class="linecol minwidth100">'.$langs->trans('Order').'</td>';
+//print '<td class="linecolqty right">'.$langs->trans('LineNo').'</td>';
 print '<td class="linecol">'.$langs->trans('DueDate').'</td>';
 print '<td class="linecolqty right">'.$langs->trans('Quantity').'</td>';
 if ($object->status >= MasterShipment::STATUS_VALIDATED) print '<td class="linecolqty right">'.$langs->trans('PickedQuantity').'</td>';

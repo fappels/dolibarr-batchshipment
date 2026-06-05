@@ -54,8 +54,8 @@ if (!empty($conf->global->MAIN_VIEW_LINE_NUMBER)) {
 	$colspan++;
 }
 print '<td class="linecol maxwidth200"></td>';
-$colspan++;
-print '<td class="linecol"></td>';
+//$colspan++;
+//print '<td class="linecol"></td>';
 $colspan++;
 print '<td class="linecol"></td>';
 $colspan++;
