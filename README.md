@@ -2,11 +2,22 @@
 
 ## Features
 
-Description of the module...
+BatchShipment is a batch picking module for Dolibarr that lets warehouse staff pick products for multiple customer orders at the same time.
 
-<!--
+Key features:
+
+- Create a picking list from a selection of customer orders so you can pick items for several orders in one operation.
+- Define source stock locations and select lot/serial numbers to use for the pick.
+- Automatic defaults for locations and lot/serial selection based on FIFO rules to recommend the best stock to use.
+- Perform picking in one-stage mode (items immediately sorted per order) or two-stage mode (collect all picked items first, then allocate them to orders in a second stage).
+- When pickings are validated the module automatically generates the corresponding shipments for each related order.
+- Final verification step to mark shipments as finished.
+
+This module speeds up warehouse operations by minimizing trips and ensuring correct lot/serial and FIFO usage when fulfilling multiple orders together.
+
+
 ![Screenshot batchshipment](img/screenshot_batchshipment.png?raw=true "BatchShipment"){imgmd}
--->
+
 
 Other external modules are available on [Dolistore.com](https://www.dolistore.com).
 
@@ -31,7 +42,7 @@ You can also get a ready-to-use instance in the cloud from https://saas.dolibarr
 
 ### From the ZIP file and GUI interface
 
-If the module is a ready-to-deploy zip file, so with a name `module_xxx-version.zip` (e.g., when downloading it from a marketplace like [Dolistore](https://www.dolistore.com)),
+If the module is a ready-to-deploy zip file, so with a name `module_BatchShipment-version.zip` (e.g., when downloading it from a marketplace like [Dolistore](https://www.dolistore.com)),
 go to menu `Home> Setup> Modules> Deploy external module` and upload the zip file.
 
 <!--
@@ -62,7 +73,6 @@ Note: If this screen tells you that there is no "custom" directory, check that y
         ```
 -->
 
-<!--
 
 ### From a GIT repository
 
@@ -70,10 +80,8 @@ Clone the repository in `$dolibarr_main_document_root_alt/batchshipment`
 
 ```shell
 cd ....../custom
-git clone git@github.com:gitlogin/batchshipment.git batchshipment
+git clone git@github.com:fappels/dolibarr_batchshipment.git batchshipment
 ```
-
--->
 
 ### Final steps
 
