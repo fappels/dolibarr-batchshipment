@@ -80,7 +80,7 @@ Clone the repository in `$dolibarr_main_document_root_alt/batchshipment`
 
 ```shell
 cd ....../custom
-git clone git@github.com:fappels/dolibarr_batchshipment.git batchshipment
+git clone git@github.com:fappels/dolibarr-batchshipment.git batchshipment
 ```
 
 ### Final steps
