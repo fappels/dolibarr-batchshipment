@@ -16,7 +16,7 @@ Key features:
 This module speeds up warehouse operations by minimizing trips and ensuring correct lot/serial and FIFO usage when fulfilling multiple orders together.
 
 
-![Screenshot batchshipment](img/screenshot_batchshipment.png?raw=true "BatchShipment"){imgmd}
+![Screenshot batchshipment](img/screenshot_batchshipment.png?raw=true "BatchShipment")
 
 
 Other external modules are available on [Dolistore.com](https://www.dolistore.com).
