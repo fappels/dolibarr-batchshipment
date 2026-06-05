@@ -5,35 +5,83 @@
 #
 
 # Module label 'ModuleBatchShipmentName'
-ModuleBatchShipmentName = BatchShipment
+ModuleBatchShipmentName = Expédition groupée
 # Module description 'ModuleBatchShipmentDesc'
-ModuleBatchShipmentDesc = BatchShipment description
+ModuleBatchShipmentDesc = Module permettant le préparation groupée des commandes clients
 
 #
 # Admin page
 #
-BatchShipmentSetup = BatchShipment setup
-Settings = Settings
-BatchShipmentSetupPage = BatchShipment setup page
-NewSection=New section
+BatchShipmentSetup = Configuration de l'expédition groupée
+Settings = Configurations
+BatchShipmentSetupPage = Page de configuration des expéditions groupées
+NewSection=Nouvelle rubrique
 BATCHSHIPMENT_MYPARAM1 = My param 1
 BATCHSHIPMENT_MYPARAM1Tooltip = My param 1 tooltip
 BATCHSHIPMENT_MYPARAM2=My param 2
 BATCHSHIPMENT_MYPARAM2Tooltip=My param 2 tooltip
-
+MasterShipmentDocumentModules = Modèles de documents de liste de préparation
+MasterShipmentNumberingModules = Modèles de numérotation des listes de préparation 
 
 #
 # About page
 #
-About = About
-BatchShipmentAbout = About BatchShipment
-BatchShipmentAboutPage = BatchShipment about page
+About = À propos
+BatchShipmentAbout = À propos de l'expédition groupée
+BatchShipmentAboutPage = Page À propos de l'expédition groupée
 
 #
-# Sample page
+# Exemple de page
 #
-BatchShipmentArea = Home BatchShipment
-MyPageName = My page name
+BatchShipmentArea = Accueil - Expédition groupée
+AddToMasterShipment = Ajouter à %s
+MasterShipment = Liste de préparation
+New_MasterShipment = Nouvelle liste de préparation
+List_MasterShipment = Liste
+PickedQuantity = Quantité prélevée
+LoadedQuantity = Quantité chargée
+OrderQuantity = Quantité de la commande
+BatchQuantity = Quantité du lot
+OrderRemovedFromMasterShipment = Commande retirée du liste de préparation %s
+OrderNotRemovedFromMasterShipment = Commande non retirée du liste de préparation %s
+SetDraftMasterShipment = Définir la liste de préparation comme brouillon
+ValidatePicking = Valider la préparation
+ValidateLoading = Valider le chargement
+SetToValidated = Retour à l'état validé
+SetValidatedMasterShipment = Définir la liste de préparation comme validée
+ConfirmCloseAsk = Confirmer la clôture de la liste de préparation. Important : aucun retour en arrière n'est possible après la clôture.
+CreateAndAddToNewMasterShipment = Ajouter à la nouvelle liste de préparation.
+DueDate = Date d'échéance
+LineNo = N° de ligne
+NotAllLinesChecked = Toutes les lignes ne sont pas cochées.
+TrackingMissing = Numéro de suivi manquant.
+NotAllLinesStatusLoaded = Le statut de toutes les lignes n'est pas chargé.
+UndoAllLoad = Annuler tout le chargement
+ConfirmUndoAllLoading = Vous êtes sur le point d'annuler tout le chargement. Êtes-vous sûr ?
+NotAllLinesPicked = Toutes les lignes n'ont pas été préparées
+Pick = Préparation
+Load = Charger
+CheckLoad = Vérifier
+Picked = Préparé
+Loaded = Chargé
+Checked = Vérifié
+QtyTake = Prise
+CantCloseOrderWhenOnProcess = Impossible de marquer la commande comme livrée tant qu'une ligne est encore en cours de traitement dans la liste de préparation.
+UserPick = Utilisateur chargé de la préparation
+UserLoad = Utilisateur chargé du chargement
+UserShip = Utilisateur chargé de l'expédition
+Datepick = Date de préparation
+Dateload = Date de chargement
+Dateship = Date d'expédition
+StockMode = Autoriser uniquement l'ajout de lignes avec stock
+Off = Désactivé
+PartualStock = Stock partiel
+FullStock = Stock complet
+NotAddedToMasterShipment = %s non ajouté à la liste de préparation
+AddedToMasterShipment = %s ajouté à la liste de préparation
+SetLines = Définir
+Split = Diviser
+MergeLines = Fusionner
 
 #
 # Sample widget
