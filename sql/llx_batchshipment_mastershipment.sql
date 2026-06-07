@@ -52,6 +52,6 @@ CREATE TABLE llx_batchshipment_mastershipment(
 	fk_shipping_method int, 
 	tracking_number varchar(50),
 	fk_entrepot int,
-	stock_mode int,
+	stock_mode int
 	-- END MODULEBUILDER FIELDS
 ) ENGINE=innodb;
