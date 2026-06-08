@@ -725,7 +725,7 @@ class ActionsBatchShipment extends CommonHookActions
 		if (in_array($parameters['currentcontext'], array('orderlist'))) {
 			$search_mastershipment = GETPOST('search_mastershipment', 'alpha');
 			if ($search_mastershipment != '') {
-				$this->resprints .= "AND (SELECT GROUP_CONCAT(mss.ref, ',') FROM ".MAIN_DB_PREFIX."batchshipment_mastershipmentdet as msds INNER JOIN ".MAIN_DB_PREFIX."batchshipment_mastershipment mss ON mss.rowid = msds.fk_mastershipment WHERE c.rowid=msds.fk_commande) LIKE '%".$search_mastershipment."%'";
+				$this->resprints .= " AND (SELECT GROUP_CONCAT(mss.ref, ',') FROM ".MAIN_DB_PREFIX."batchshipment_mastershipmentdet as msds INNER JOIN ".MAIN_DB_PREFIX."batchshipment_mastershipment mss ON mss.rowid = msds.fk_mastershipment WHERE c.rowid=msds.fk_commande) LIKE '%".$search_mastershipment."%'";
 			}
 		}
 		if (in_array($parameters['currentcontext'], array('shipmentlist', 'shipmentpackagelist'))) {
