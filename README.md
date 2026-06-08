@@ -8,7 +8,7 @@ Key features:
 
 - Create a picking list from a selection of customer orders so you can pick items for several orders in one operation.
 - Define source stock locations and select lot/serial numbers to use for the pick.
-- Automatic defaults for locations and lot/serial selection based on FIFO rules to recommend the best stock to use.
+- Automatic defaults for locations and lot/serial selection based on FIFO rules to force the best stock to use for picking.
 - Perform picking in one-stage mode (items immediately sorted per order) or two-stage mode (collect all picked items first, then allocate them to orders in a second stage).
 - When pickings are validated the module automatically generates the corresponding shipments for each related order.
 - Final verification step to mark shipments as finished.
@@ -79,7 +79,6 @@ Note: If this screen tells you that there is no "custom" directory, check that y
 Clone the repository in `$dolibarr_main_document_root_alt/batchshipment`
 
 ```shell
-cd ....../custom
 git clone git@github.com:fappels/dolibarr-batchshipment.git batchshipment
 ```
 

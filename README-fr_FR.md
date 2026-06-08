@@ -8,7 +8,7 @@ Fonctionnalités principales :
 
 - Créez une liste de préparation à partir d'une sélection de commandes clients afin de prélever des articles pour plusieurs commandes en une seule opération.
 - Définissez les emplacements de stock source et sélectionnez les numéros de lot/série à utiliser pour le prélèvement.
-- Valeurs par défaut automatiques pour les emplacements et la sélection de lot/numéro de série basées sur des règles FIFO pour recommander le meilleur stock à utiliser.
+- Valeurs par défaut automatiques pour les emplacements et la sélection de lot/numéro de série basées sur des règles FIFO pour déterminer le meilleur stock à utiliser pour la préparation des commandes.
 - Effectuez le prélèvement en mode une étape (articles triés immédiatement par commande) ou en mode deux étapes (rassemblez d'abord tous les articles prélevés, puis affectez-les aux commandes dans une seconde étape).
 - Lorsque les prélèvements sont validés, le module génère automatiquement les expéditions correspondantes pour chaque commande liée.
 - Étape finale de vérification pour marquer les expéditions comme terminées.
@@ -79,7 +79,6 @@ Note: If this screen tells you that there is no "custom" directory, check that y
 Clone the repository in `$dolibarr_main_document_root_alt/batchshipment`
 
 ```shell
-cd ....../custom
 git clone git@github.com:fappels/dolibarr-batchshipment.git batchshipment
 ```
 
