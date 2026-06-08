@@ -652,7 +652,7 @@ class ActionsBatchShipment extends CommonHookActions
 			$this->resprints .= ', (SELECT SUM(cd.qty) FROM '.MAIN_DB_PREFIX.'commandedet as cd WHERE c.rowid=cd.fk_commande) as order_qty';
 			$this->resprints .= ', (SELECT SUM(msds.qty_pick) FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds WHERE c.rowid=msds.fk_commande) as picked_qty';
 			$this->resprints .= ', (SELECT SUM(msds.qty_load) FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds WHERE c.rowid=msds.fk_commande) as loaded_qty';
-			$this->resprints .= ', (SELECT SUM(msds.qty) FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds WHERE c.rowid=msds.fk_commande) as batch_qty';
+			$this->resprints .= ', (SELECT SUM(msds.qty) FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds WHERE c.rowid=msds.fk_commande) as ms_qty';
 			$this->resprints .= ', (SELECT GROUP_CONCAT(DISTINCT mss.rowid, ",") FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds INNER JOIN '.MAIN_DB_PREFIX.'batchshipment_mastershipment mss ON mss.rowid = msds.fk_mastershipment WHERE c.rowid=msds.fk_commande) as mastershipment_ids';
 			$this->resprints .= ', (SELECT GROUP_CONCAT(DISTINCT mss.ref, ",") FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds INNER JOIN '.MAIN_DB_PREFIX.'batchshipment_mastershipment mss ON mss.rowid = msds.fk_mastershipment WHERE c.rowid=msds.fk_commande) as mastershipment_refs';
 			$this->resprints .= ', (SELECT GROUP_CONCAT(DISTINCT mss.label, ",") FROM '.MAIN_DB_PREFIX.'batchshipment_mastershipmentdet as msds INNER JOIN '.MAIN_DB_PREFIX.'batchshipment_mastershipment mss ON mss.rowid = msds.fk_mastershipment WHERE c.rowid=msds.fk_commande) as mastershipment_labels';
@@ -867,7 +867,7 @@ class ActionsBatchShipment extends CommonHookActions
 			$sortorder = $parameters['sortorder'];
 			$param = $parameters['param'];
 			$this->resprints .= getTitleFieldOfList($langs->trans('OrderQuantity'), 0, $_SERVER["PHP_SELF"], 'order_qty', '', $param, '', $sortfield, $sortorder, 'right ');
-			$this->resprints .= getTitleFieldOfList($langs->trans('BatchQuantity'), 0, $_SERVER["PHP_SELF"], 'batch_qty', '', $param, '', $sortfield, $sortorder, 'right ');
+			$this->resprints .= getTitleFieldOfList($langs->trans('MasterShipmentQuantity'), 0, $_SERVER["PHP_SELF"], 'ms_qty', '', $param, '', $sortfield, $sortorder, 'right ');
 			$this->resprints .= getTitleFieldOfList($langs->trans('PickedQuantity'), 0, $_SERVER["PHP_SELF"], 'picked_qty', '', $param, '', $sortfield, $sortorder, 'right ');
 			$this->resprints .= getTitleFieldOfList($langs->trans('LoadedQuantity'), 0, $_SERVER["PHP_SELF"], 'loaded_qty', '', $param, '', $sortfield, $sortorder, 'right ');
 			$this->resprints .= getTitleFieldOfList('Master Shipment', 0, $_SERVER["PHP_SELF"], 'mastershipment_refs', '', $param, '', $sortfield, $sortorder, 'left ');
@@ -907,7 +907,7 @@ class ActionsBatchShipment extends CommonHookActions
 		if (in_array($parameters['currentcontext'], array('orderlist'))) {
 			$obj = $parameters['obj'];
 			$this->resprints .= '<td>'.price($obj->order_qty).'</td>';
-			$this->resprints .= '<td>'.price($obj->batch_qty).'</td>';
+			$this->resprints .= '<td>'.price($obj->ms_qty).'</td>';
 			$linkpostfields = '&sortfield=' . GETPOST('sortfield', 'alpha') .
 			'&sortorder=' . GETPOST('sortorder', 'alpha') .
 			'&search_sale=' . GETPOST('search_sale') .
