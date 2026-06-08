@@ -953,9 +953,6 @@ class MasterShipment extends CommonObject
 		// Validate picked
 		$sql = "UPDATE ".$this->db->prefix().$this->table_element;
 		$sql .= " SET ";
-		if (!empty($this->fields['ref'])) {
-			$sql .= " ref = '".$this->db->escape($num)."',";
-		}
 		$sql .= " status = ".self::STATUS_PICKED;
 		if (!empty($this->fields['fk_user_pick'])) {
 			$sql .= ", fk_user_pick = ".((int) $user->id);
