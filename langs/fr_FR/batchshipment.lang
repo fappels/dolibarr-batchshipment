@@ -82,6 +82,11 @@ AddedToMasterShipment = %s ajouté à la liste de préparation
 SetLines = Définir
 Split = Diviser
 MergeLines = Fusionner
+MastershipmentHasDifferentCustomers = La liste de préparation est mise à jour pour plusieurs clients.
+MastershipmentHasDifferentShippingMethods = La liste de préparation est mise à jour pour plusieurs modes d'expédition.
+NotEnoughStockForThisLine = Pas assez de stock pour %s
+InvalidMasterShipment = Erreur liste de préparation
+NoQtyToAddForThisLine = Aucune quantité à ajouter pour %s, probablement déjà dans une expédition.
 
 #
 # Sample widget

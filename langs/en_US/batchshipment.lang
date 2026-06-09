@@ -83,6 +83,11 @@ AddedToMasterShipment = %s added to Picking list
 SetLines = Set
 Split = Split
 MergeLines = Merge
+MastershipmentHasDifferentCustomers = Picking list is updated for multiple customers.
+MastershipmentHasDifferentShippingMethods = Picking list is updated for multiple shipment methods.
+NotEnoughStockForThisLine = Not enough stock for %s
+InvalidMasterShipment = Invalid Picking list
+NoQtyToAddForThisLine = No quantities to add for %s, probaly already in a shipment.
 
 #
 # Sample widget

@@ -1012,32 +1012,33 @@ class ActionsBatchShipment extends CommonHookActions
 	 * @param User					$user			User
 	 * @param MasterShipment		$mastershipment	Container object
 	 * @param Commande				$object			order object
-	 * @param Object				$objectLine		order line object
+	 * @param OrderLine				$objectLine		order line object
 	 * @param float					$qty			Qty to add
 	 * @return int NOK < 0 > OK, 0 = no add line
 	 */
 	private function addMasterShipmentLine($user, $mastershipment, $object, $objectLine, $qty)
 	{
+		global $langs;
+
 		$result = 0;
+		// check if mastershipment is valid and if we have a qty to add
 		if ($mastershipment->id > 0 && $qty > 0) {
 			$update = false;
 			$mastershipment->fetch($mastershipment->id);
-			if (empty($mastershipment->label) && !empty($object->ref_client)) {
-				$mastershipment->label = $object->ref_client;
-				$update = true;
-			}
 			if (empty($mastershipment->fk_shipping_method) && !empty($object->shipping_method_id)) {
 				$mastershipment->fk_shipping_method = $object->shipping_method_id;
 				$update = true;
 			} elseif (!empty($mastershipment->fk_shipping_method) && !empty($object->shipping_method_id) && $mastershipment->fk_shipping_method != $object->shipping_method_id) {
-				$result = -1;
-				$this->errors[] = "Orders should have same shipment method";
+				$mastershipment->fk_shipping_method = -1;
+				$update = true;
+				setEventMessages('MastershipmentHasDifferentShippingMethods', null);
 			}
 			if (empty($mastershipment->fk_soc) && !empty($object->socid)) {
 				$mastershipment->fk_soc = $object->socid;
 				$update = true;
 			} elseif (!empty($mastershipment->fk_soc) && !empty($object->socid) && $mastershipment->fk_soc != $object->socid) {
 				$mastershipment->fk_soc = -1;
+				$update = true;
 				setEventMessages('MastershipmentHasDifferentCustomers', null);
 			}
 			$objectShippingContactIds = $object->getIdContact('external', 'SHIPPING');
@@ -1116,16 +1117,26 @@ class ActionsBatchShipment extends CommonHookActions
 									$mastershipmentLine->update($user);
 								}
 							}
+						} else {
+							setEventMessages($langs->trans('NotEnoughStockForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null);
 						}
 					} else {
 						$result = -1;
-						$mastershipment->error = 'Bad addline source object';
+						$mastershipment->error = 'Bad addline source object type';
 					}
 				}
 
 				if ($result < 0) {
 					$this->errors = $mastershipment->errors;
 				}
+			}
+		} else {
+			if (empty($mastershipment->id) || $mastershipment->id <= 0) {
+				$result = -1;
+				$this->errors[] = 'InvalidMasterShipment';
+			}
+			if ($qty <= 0) {
+				setEventMessages($langs->trans('NoQtyToAddForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null);
 			}
 		}
 		return $result;
