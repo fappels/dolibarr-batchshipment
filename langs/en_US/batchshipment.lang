@@ -50,6 +50,7 @@ ValidatePicking = Validate Picking
 ValidateLoading = Validate Loading
 SetToValidated = Back to validated
 SetValidatedMasterShipment = Set Picking list to validated
+SetPickedMasterShipment = Set picking list to picked
 ConfirmCloseAsk = Confirm Picking list close. Important: no backward flow possible for the moment after close.
 CreateAndAddToNewMasterShipment = Add to new Picking list
 DueDate = Due date

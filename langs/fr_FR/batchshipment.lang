@@ -49,6 +49,7 @@ ValidatePicking = Valider la préparation
 ValidateLoading = Valider le chargement
 SetToValidated = Retour à l'état validé
 SetValidatedMasterShipment = Définir la liste de préparation comme validée
+SetPickedMasterShipment = Définir la liste de préparation comme préparée
 ConfirmCloseAsk = Confirmer la clôture de la liste de préparation. Important : aucun retour en arrière n'est possible après la clôture.
 CreateAndAddToNewMasterShipment = Ajouter à la nouvelle liste de préparation.
 DueDate = Date d'échéance

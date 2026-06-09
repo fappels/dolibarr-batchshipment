@@ -466,6 +466,18 @@ if (empty($reshook)) {
 		$action = '';
 	}
 
+	// Action back to picked object
+	if ($action == 'confirm_setpicked' && $confirm == 'yes' && $permissiontoadd) {
+		$result = $object->setPicked($user);
+		if ($result >= 0) {
+			// Nothing else done
+		} else {
+			$error++;
+			setEventMessages($object->error, $object->errors, 'errors');
+		}
+		$action = '';
+	}
+
 	// shipping method
 	if ($action == 'setshippingmethod' && $permissiontoadd) {
 		$result = $object->setShippingMethod(GETPOSTINT('fk_shipping_method'), 0, $user);
@@ -663,6 +675,22 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		//	array('type' => 'other', 'name' => 'idwarehouse', 'label' => $label, 'value' => $formproduct->selectWarehouses(GETPOST('idwarehouse') ?GETPOST('idwarehouse') : $warehouseid, 'idwarehouse', '', 1, 0, 0, $langs->trans("NoStockAction"), 0, $forcecombo))
 		//);
 		$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'].'?id='.$object->id, $langs->trans('SetValidatedMasterShipment'), $text, 'confirm_setvalidated', $formquestion, 0, 1);
+	}
+
+	// Confirmation of action setvalidate
+	if ($action == 'setpicked') {
+		$formquestion = array();
+		$langs->load("stocks");
+		$text = ''; //$langs->trans("ConfirmSetValidatedMasterShipmentForStock");
+		//if (!empty($conf->global->MASTERSHIPMENT_DEFAULT_PICKING_LOCATION)) {
+		//	$warehouseid = $conf->global->MASTERSHIPMENT_DEFAULT_PICKING_LOCATION;
+		//} else {
+		//	$warehouseid = 'ifone';
+		//}
+		//$formquestion = array(
+		//	array('type' => 'other', 'name' => 'idwarehouse', 'label' => $label, 'value' => $formproduct->selectWarehouses(GETPOST('idwarehouse') ?GETPOST('idwarehouse') : $warehouseid, 'idwarehouse', '', 1, 0, 0, $langs->trans("NoStockAction"), 0, $forcecombo))
+		//);
+		$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'].'?id='.$object->id, $langs->trans('SetPickedMasterShipment'), $text, 'confirm_setpicked', $formquestion, 0, 1);
 	}
 
 	// Confirmation of undo load, will delete all shipmentpackage and shipment made
@@ -886,7 +914,9 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			foreach ($object->lines as $line) {
 				if ($line->status != MasterShipmentLine::STATUS_PICKED) {
 					$allowValidatePicking = false;
+					$rightforbacktovalidate = false;
 					$disableValidatePickingWarning = $langs->trans('NotAllLinesPicked');
+					$disableBackToValidateWarning = $langs->trans('NotAllLinesPicked');
 					break;
 				}
 			}
@@ -927,20 +957,20 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			if ($object->status == $object::STATUS_VALIDATED) {
 				$buttonParams = array();
 				if (!$rightfordraft) $buttonParams['attr']['title'] = $disableBackToDraftWarning;
-				print dolGetButtonAction('', $langs->trans('SetToDraft'), 'default', $_SERVER["PHP_SELF"].'?id='.$object->id.'&action=confirm_setdraft&confirm=yes&token='.newToken(), '', $permissiontoadd, $buttonParams);
+				print dolGetButtonAction('', $langs->trans('SetToDraft'), 'default', $_SERVER["PHP_SELF"].'?id='.$object->id.'&action=confirm_setdraft&confirm=yes&token='.newToken(), '', $rightfordraft, $buttonParams);
 			}
 
 			// Back to validated
 			if ($object->status == $object::STATUS_PICKED) {
 				$buttonParams = array();
-				if (!$rightfordraft) $buttonParams['attr']['title'] = $disableBackToValidateWarning;
+				if (!$rightforbacktovalidate) $buttonParams['attr']['title'] = $disableBackToValidateWarning;
 				print dolGetButtonAction($langs->trans('SetToValidated'), '', 'default', $_SERVER["PHP_SELF"].'?id='.$object->id.'&action=setvalidated&confirm=no&token='.newToken(), '', $rightforbacktovalidate, $buttonParams);
 			}
 
 			// Back to picked
 			if ($object->status == $object::STATUS_SHIPMENTONPROCESS) {
 				$buttonParams = array();
-				if (!$rightfordraft) $buttonParams['attr']['title'] = $disableBackToPickedWarning;
+				if (!$rightforbacktopicked) $buttonParams['attr']['title'] = $disableBackToPickedWarning;
 				print dolGetButtonAction($langs->trans('SetToPicked'), '', 'default', $_SERVER["PHP_SELF"].'?id='.$object->id.'&action=setpicked&confirm=no&token='.newToken(), '', $rightforbacktopicked, $buttonParams);
 			}
 

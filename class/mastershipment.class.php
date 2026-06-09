@@ -1357,42 +1357,47 @@ class MasterShipment extends CommonObject
 			return 0;
 		}
 
-		if (GETPOSTISSET("idwarehouse")) {
-			$idwarehouse = GETPOST("idwarehouse", 'int');
-		} else {
-			$idwarehouse = 0;
+		$result = $this->setStatusCommon($user, self::STATUS_VALIDATED, $notrigger, 'MASTERSHIPMENT_UNPICKED');
+
+		return $result;
+	}
+
+	/**
+	 *	Set back to picked status
+	 *
+	 *	@param User	$user			Object user that modify
+	 *  @param	int		$notrigger		1=Does not execute triggers, 0=Execute triggers
+	 *	@return	int						<0 if KO, >0 if OK
+	 */
+	public function setPicked($user, $notrigger = 0)
+	{
+		$error = 0;
+
+		// Protection
+		if ($this->status <= self::STATUS_PICKED) {
+			return 0;
 		}
 
-		/*if (! ((!getDolGlobalInt('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('batchshipment','write'))
-		 || (getDolGlobalInt('MAIN_USE_ADVANCED_PERMS') && $user->hasRight('batchshipment','batchshipment_advance','validate'))))
-		 {
-		 $this->error='Permission denied';
-		 return -1;
-		 }*/
+		$result = $this->setStatusCommon($user, self::STATUS_PICKED, $notrigger, 'MASTERSHIPMENT_UNSHIPMENTONPROCESS');
 
-		$result = $this->setStatusCommon($user, self::STATUS_VALIDATED, $notrigger, 'MASTERSHIPMENT_UNSHIPMENTONPROCESS');
 
-		if ($result < 0) {
-			return $result;
-		} elseif ($idwarehouse > 0) {
-			// delete shipments
-			$shipment = new Expedition($this->db);
-			foreach ($this->lines as $line) {
-				if ($line->fk_expedition > 0) {
-					$result = $shipment->fetch($line->fk_expedition);
-					if ($result > 0) {
-						$result = $shipment->delete();
-						if ($result < 0) {
-							$error++;
-							$this->error = $shipment->error;
-							break;
-						}
+		// delete shipments
+		$shipment = new Expedition($this->db);
+		foreach ($this->lines as $line) {
+			if ($line->fk_expedition > 0) {
+				$result = $shipment->fetch($line->fk_expedition);
+				if ($result > 0) {
+					$result = $shipment->delete();
+					if ($result < 0) {
+						$error++;
+						$this->error = $shipment->error;
+						break;
 					}
 				}
 			}
-
-			return $result;
 		}
+
+		return $result;
 	}
 
 	/**
