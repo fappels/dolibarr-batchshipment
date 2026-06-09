@@ -162,7 +162,7 @@ class MasterShipment extends CommonObject
 		"model_pdf" => array("type" => "varchar(255)", "label" => "Modelpdf", "enabled" => "1", 'position' => 150, 'notnull' => 0, "visible" => "0",),
 		"status" => array("type" => "int", "label" => "Status", "enabled" => "1", 'position' => 500, 'notnull' => 1, "visible" => "5", 'arrayofkeyval'=>array('0'=>'Draft', '1'=>'Validated', '2'=>'Picked', '3'=>'Loaded', '4'=>'Closed', '9'=>'Canceled')),
 		"date_delivery" => array("type" => "datetime", "label" => "DeliveryDate", "enabled" => "1", 'position' => 160, 'notnull' => 0, "visible" => "-4",),
-		"fk_shipping_method" => array("type" => "int", "label" => "Shippingmethod", "enabled" => "1", 'position' => 165, 'notnull' => 0, "visible" => "-1", "css" => "maxwidth500 widthcentpercentminusxx",),
+		"fk_shipping_method" => array("type" => "int", "label" => "Shippingmethod", "enabled" => "1", 'position' => 165, 'notnull' => 0, "visible" => "0", "css" => "maxwidth500 widthcentpercentminusxx",),
 		"tracking_number" => array("type" => "varchar(50)", "label" => "Trackingnumber", "enabled" => "1", 'position' => 170, 'notnull' => 0, "visible" => "-4",),
 		"fk_entrepot" => array("type" => "integer:Entrepot:product/stock/class/entrepot.class.php", "label" => "Warehouse", "enabled" => "1", 'position' => 175, 'notnull' => -1, "visible" => 1),
 		"stock_mode" => array("type" => "int", "label" => "StockMode", "enabled" => "1", 'position' => 180, 'notnull' => 0, "visible" => "-1",'arrayofkeyval'=>array('0'=>'Off', '1'=>'PartualStock', '2'=>'FullStock',)),
