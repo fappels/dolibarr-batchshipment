@@ -2951,6 +2951,7 @@ class MasterShipmentLine extends CommonObjectLine
 	 */
 	public function getBestWarehouse($product, $neededQty = 0, $fk_entrepot = null, $warehousestoExclude = array())
 	{
+		// TODO also check quantities reserved in other master shipment lines not yet shipped to check real available stock to pick/load on warehouse
 		$product->load_stock('novirtual');
 		$warehouse = new Entrepot($this->db);
 		if (!empty($product->stock_warehouse)) {
@@ -3013,7 +3014,7 @@ class MasterShipmentLine extends CommonObjectLine
 	 */
 	public function getBestLot($stockObject, $neededQty = 0, $lotbatchtoExclude = array(), $mode = 'fifo')
 	{
-		// TODO split lines if not enough stock in one lot/batch to pick/load whole quantity
+		// TODO also check Lots reserved in other master shipment lines not yet shipped to check real available stock to pick/load on warehouse
 		global $conf;
 
 		$productbatch = new ProductBatch($this->db);
