@@ -138,6 +138,8 @@ class ActionsBatchShipment extends CommonHookActions
 
 		$error = 0; // Error counter
 
+		$result = 0;
+
 		$massAction = $parameters['massaction'];
 
 		/* print_r($parameters); print_r($object); echo "action: " . $action; */
@@ -172,32 +174,32 @@ class ActionsBatchShipment extends CommonHookActions
 							$mastershipment->fetch($mastershipmentId);
 							$mastershipmentLine = new MasterShipmentLine($this->db);
 							if (!$orderlinesSelected) {
-								$result = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id);
+								$mastershipmentLines = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id);
 							} else {
-								$result = $mastershipmentLine->fetchAll('', '', 0, 0, '(fk_commande:=:' . $order->id . ') AND (fk_commande_line:=:' . $orderLine->id . ')');
+								$mastershipmentLines = $mastershipmentLine->fetchAll('', '', 0, 0, '(fk_commande:=:' . $order->id . ') AND (fk_commande_line:=:' . $orderLine->id . ')');
 							}
-							// check if order already in mastershipment and/or shipment
-							$qtyInMaster = 0;
-							$qtyInMasterLoaded = 0;
-							if (is_array($result) && count($result) > 0) {
-								foreach ($result as $resultLine) {
-									if ($resultLine->fk_commande_line == $orderLine->id) {
-										$qtyInMaster += $resultLine->qty;
-										$qtyInMasterLoaded += $resultLine->qty;
-									}
-								}
-							}
+
 							$order->loadExpeditions();
 							foreach ($order->lines as $line) {
 								if (!$orderlinesSelected || $line->id == $orderLine->id) {
+									// check if order already in mastershipment and/or shipment
+									$qtyInMaster = 0;
+									$qtyInMasterLoaded = 0;
+									if (is_array($mastershipmentLines) && count($mastershipmentLines) > 0) {
+										foreach ($mastershipmentLines as $resultLine) {
+											if ($resultLine->fk_commande_line == $line->id) {
+												$qtyInMaster += $resultLine->qty;
+												$qtyInMasterLoaded += $resultLine->qty_loaded;
+											}
+										}
+									}
 									if ($orderlinesSelected) {
 										$toShipQty = $orderLine->qty - $qtyInMaster - ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 									} else {
 										$toShipQty = $line->qty - $qtyInMaster - ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 									}
 									if ($qtyInMaster >= $line->qty) {
-										$error++;
-										$this->errors[] = 'You try to add order '.$order->ref.' to a master shipment which is already fully in master shipment.';
+										setEventMessages($langs->trans('AlreadyAddedToMasterShipment', ($line->product_ref ? $line->product_ref : $line->desc), $order->ref), null, 'warnings');
 									} else {
 										$result = $this->addMastershipmentLine($user, $mastershipment, $order, $line, $toShipQty);
 										if ($result < 0) {
@@ -259,32 +261,32 @@ class ActionsBatchShipment extends CommonHookActions
 							if ($order->id > 0 && ($order->status == Commande::STATUS_VALIDATED || $order->status == Commande::STATUS_SHIPMENTONPROCESS)) {
 								$mastershipmentLine = new MasterShipmentLine($this->db);
 								if (!$orderlinesSelected) {
-									$result = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id);
+									$mastershipmentLines = $mastershipmentLine->fetchAll('', '', 0, 0, 'fk_commande:=:' . $order->id);
 								} else {
-									$result = $mastershipmentLine->fetchAll('', '', 0, 0, '(fk_commande:=:' . $order->id . ') AND (fk_commande_line:=:' . $orderLine->id . ')');
+									$mastershipmentLines = $mastershipmentLine->fetchAll('', '', 0, 0, '(fk_commande:=:' . $order->id . ') AND (fk_commande_line:=:' . $orderLine->id . ')');
 								}
-								// check if order already in mastershipment
-								$qtyInMaster = 0;
-								$qtyInMasterLoaded = 0;
-								if (is_array($result) && count($result) > 0) {
-									foreach ($result as $resultLine) {
-										if ($resultLine->fk_commande_line == $orderLine->id) {
-											$qtyInMaster += $resultLine->qty;
-											$qtyInMasterLoaded += $resultLine->qty;
-										}
-									}
-								}
+
 								$order->loadExpeditions();
 								foreach ($order->lines as $line) {
 									if (!$orderlinesSelected || $line->id == $orderLine->id) {
+										// check if order already in mastershipment
+										$qtyInMaster = 0;
+										$qtyInMasterLoaded = 0;
+										if (is_array($mastershipmentLines) && count($mastershipmentLines) > 0) {
+											foreach ($mastershipmentLines as $resultLine) {
+												if ($resultLine->fk_commande_line == $line->id) {
+													$qtyInMaster += $resultLine->qty;
+													$qtyInMasterLoaded += $resultLine->qty_loaded;
+												}
+											}
+										}
 										if ($orderlinesSelected) {
 											$toShipQty = $orderLine->qty - $qtyInMaster- ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 										} else {
 											$toShipQty = $line->qty - $qtyInMaster- ($order->expeditions[$line->id] + $qtyInMasterLoaded);
 										}
 										if ($qtyInMaster >= $line->qty) {
-											$error++;
-											$this->errors[] = 'You try to add order '.$order->ref.' to a master shipment which is already fully in master shipment.';
+											setEventMessages($langs->trans('AlreadyAddedToMasterShipment', ($line->product_ref ? $line->product_ref : $line->desc), $order->ref), null, 'warnings');
 										} else {
 											$result = $this->addMastershipmentLine($user, $mastershipment, $order, $line, $toShipQty);
 											if ($result < 0) {
@@ -1036,7 +1038,7 @@ class ActionsBatchShipment extends CommonHookActions
 			if (empty($mastershipment->fk_soc) && !empty($object->socid)) {
 				$mastershipment->fk_soc = $object->socid;
 				$update = true;
-			} elseif (!empty($mastershipment->fk_soc) && !empty($object->socid) && $mastershipment->fk_soc != $object->socid) {
+			} elseif ($mastershipment->fk_soc > 0 && !empty($object->socid) && $mastershipment->fk_soc != $object->socid) {
 				$mastershipment->fk_soc = -1;
 				$update = true;
 				setEventMessages('MastershipmentHasDifferentCustomers', null);
@@ -1118,7 +1120,7 @@ class ActionsBatchShipment extends CommonHookActions
 								}
 							}
 						} else {
-							setEventMessages($langs->trans('NotEnoughStockForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null);
+							setEventMessages($langs->trans('NotEnoughStockForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null, 'warnings');
 						}
 					} else {
 						$result = -1;
@@ -1136,7 +1138,7 @@ class ActionsBatchShipment extends CommonHookActions
 				$this->errors[] = 'InvalidMasterShipment';
 			}
 			if ($qty <= 0) {
-				setEventMessages($langs->trans('NoQtyToAddForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null);
+				setEventMessages($langs->trans('NoQtyToAddForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null, 'warnings');
 			}
 		}
 		return $result;
