@@ -320,35 +320,35 @@ class ActionsBatchShipment extends CommonHookActions
 					}
 				}
 			}
+		}
 
-			if (in_array($parameters['currentcontext'], array('shipmentlist'))) {
-				if ($massAction == 'delete_shipment') {
-					foreach ($parameters['toselect'] as $objectid) {
-						$shipment = new Expedition($this->db);
-						$shipment->fetch($objectid);
-						if ($shipment->status < Expedition::STATUS_CLOSED) {
-							$shipment->id = $objectid;
-							$result = $shipment->delete();
-							if ($result < 0) {
-								$error--;
-								$this->errors[] = $shipment->error;
-							}
-						} else {
+		if (in_array($parameters['currentcontext'], array('shipmentlist'))) {
+			if ($massAction == 'delete_shipment') {
+				foreach ($parameters['toselect'] as $objectid) {
+					$shipment = new Expedition($this->db);
+					$shipment->fetch($objectid);
+					if ($shipment->status < Expedition::STATUS_CLOSED) {
+						$shipment->id = $objectid;
+						$result = $shipment->delete();
+						if ($result < 0) {
 							$error--;
-							$this->errors[] = "Send shipment ".$shipment->ref." can't be deleted.";
+							$this->errors[] = $shipment->error;
 						}
+					} else {
+						$error--;
+						$this->errors[] = "Send shipment ".$shipment->ref." can't be deleted.";
 					}
 				}
 			}
+		}
 
-			if (!$error) {
-				$this->results = array('myreturn' => 999);
-				$this->resprints = 'A text to show';
-				return 0; // or return 1 to replace standard code
-			} else {
-				$this->errors[] = 'Error message';
-				return -1;
-			}
+		if (!$error) {
+			$this->results = array('myreturn' => 999);
+			$this->resprints = 'A text to show';
+			return 0; // or return 1 to replace standard code
+		} else {
+			$this->errors[] = 'Error message';
+			return -1;
 		}
 
 		return 0;
@@ -1105,7 +1105,7 @@ class ActionsBatchShipment extends CommonHookActions
 							);
 							if ($result < 0) {
 								$this->errors = $mastershipment->errors;
-							} elseif ($objectLine->fk_product > 0) {
+							} /*elseif ($objectLine->fk_product > 0) {
 								$mastershipmentLine->fetch($result); // refetch to set stock defaults
 								if ($stockObject) {
 									$mastershipmentLine->fk_entrepot = $stockObject->fk_entrepot;
@@ -1118,7 +1118,7 @@ class ActionsBatchShipment extends CommonHookActions
 									$mastershipmentLine->fk_entrepot = $mastershipment->fk_entrepot;
 									$mastershipmentLine->update($user);
 								}
-							}
+							} */
 						} else {
 							setEventMessages($langs->trans('NotEnoughStockForThisLine', ($objectLine->product_ref ? $objectLine->product_ref : $objectLine->desc)), null, 'warnings');
 						}
