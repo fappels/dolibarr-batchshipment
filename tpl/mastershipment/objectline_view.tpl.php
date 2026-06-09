@@ -186,7 +186,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		// inputs to store changed warehouse
 		print '<input type="hidden" name="changedline" value="">';
 		print '<input type="hidden" name="changedwarehouse" value="">';
-		$stockObject = $line->getBestWarehouse($product, $line->qty + $stockUsedForProduct[$line->fk_product], $object->fk_entrepot);
+		$stockObject = $line->getBestWarehouse($product, $line->qty + (!empty($stockUsedForProduct[$line->fk_product]) ? $stockUsedForProduct[$line->fk_product] : 0), $object->fk_entrepot);
 	}
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
@@ -271,6 +271,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		print '</td>';
 	}
 	if ($stockObject) {
+		if (!isset($stockUsedForProduct[$line->fk_product])) $stockUsedForProduct[$line->fk_product] = 0;
 		if ($stockObject->real < $line->qty) {
 			$stockUsedForProduct[$line->fk_product] += $stockObject->real;
 		} else {
@@ -278,6 +279,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		}
 	}
 	$coldisplay++;
+	$disabled = 0;
 	if ($object->status == MasterShipment::STATUS_VALIDATED) {
 		print '<td class="linecolqty right">';
 		print '<input type="text" size="5" name="qty_pick['.($i + 1).']" id="qty_pick['.($i + 1).']" class="flat right" value="'.(isset($qtysPicked[$i+1]) ? $qtysPicked[$i+1] : $line->qty_pick).'" ' . ($disabled ? 'disabled' : '') . '>';
