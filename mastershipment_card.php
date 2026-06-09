@@ -471,7 +471,7 @@ if (empty($reshook)) {
 		$result = $object->setShippingMethod(GETPOSTINT('fk_shipping_method'), 0, $user);
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
-		} else {
+		} elseif (GETPOSTINT('fk_shipping_method') > 0) {
 			$object->fk_shipping_method = GETPOSTINT('fk_shipping_method');
 		}
 	}
@@ -910,7 +910,8 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 					$disableCloseWarning = $langs->trans('NotAllLinesChecked');
 				}
 			}
-			if (empty($object->tracking_number)) {
+			if ($object->fk_shipping_method > 0 && $object->fk_soc > 0 && empty($object->tracking_number)) {
+				// not allow to close for a specific customer mastershipment if there is a shipping method and no tracking number set
 				$allowClosing = false;
 				$disableCloseWarning = $langs->trans('TrackingMissing');
 			}
