@@ -101,18 +101,6 @@ $arrayofparameters = array(
 	//'MASTERSHIPMENT_DEFAULT_LOADING_LOCATION'=>array('type'=>'entrepot', 'enabled'=>1),
 	'BATCHSHIPMENT_TWO_STAGE_PICKING'=>array('type'=>'yesno', 'enabled'=>1)
 );
- /*
-
- Sounds good — stopping here. Quick recap of what's in place for BATCHSHIPMENT_TWO_STAGE_PICKING:
-
-Loading-stage buttons (Load/UndoAllLoad, ValidateLoading, CheckLoad-at-Loaded) hidden in one-stage mode.
-Loaded-quantity column hidden in one-stage mode.
-pick()/load() refactored to reuse updateLine(), now also carrying comments/batches.
-Shipment creation extracted into createShipments(), reusable with a qtyfield selector.
-validatePicked() jumps straight to STATUS_SHIPMENTONPROCESS and creates shipments immediately when two-stage picking is off, so the existing Loaded-status UI (Shipment column, Check button, checking form) works without special-casing.
-Known open item from last turn: the checkbox auto-tick convenience in objectline_view.tpl.php (keyed on STATUS_LOADED+STATUS_SHIPMENTONPROCESS) won't auto-select lines in one-stage mode since lines stay STATUS_PICKED — manual ticking still works, just not pre-checked. Worth revisiting whenever you pick this back up.
-*/
-
 
 $dirmodels = array_merge(array('/'), (array) $conf->modules_parts['models']);
 
