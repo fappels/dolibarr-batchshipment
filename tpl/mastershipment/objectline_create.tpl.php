@@ -64,8 +64,10 @@ $colspan++;
 if ($object->status >= MasterShipment::STATUS_VALIDATED) {
 	print '<td class="linecolqty right"></td>';
 	$colspan++;
-	print '<td class="linecolqty right"></td>';
-	$colspan++;
+	if (getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
+		print '<td class="linecolqty right"></td>';
+		$colspan++;
+	}
 }
 if (!empty($conf->productbatch->enabled)) {
 	print '<td class="linecoldescription right"></td>';
@@ -77,6 +79,10 @@ $colspan++;
 print '<td class="linecol"></td>';
 $colspan++;
 if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+	print '<td class="linecol"></td>';
+	$colspan++;
+}
+if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS || (!getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING') && $object->status >= MasterShipment::STATUS_PICKED)) {
 	print '<td class="linecol"></td>';
 	$colspan++;
 }
@@ -100,13 +106,13 @@ print '</tr>';
 print '<tr>';
 if (!$nolinesbefore) {
 	print '<td class="bordertop nobottom linecoledit right valignmiddle" colspan="'.$beforeSubmitButtonColspan.'"></td>';
-	if ($this->status == MasterShipment::STATUS_SHIPMENTONPROCESS) {
+	if ($this->status == MasterShipment::STATUS_SHIPMENTONPROCESS || ($this->status == MasterShipment::STATUS_PICKED && !getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING'))) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
 		print '<input type="submit" class="button" value="'.$langs->trans('CheckLoad').'" name="check" id="checkbutton">';
 		print '</td>';
 		$colspan -= $beforeSubmitButtonColspan;
 		$colspan -= 1; // nbr of button
-	} elseif ($this->status == MasterShipment::STATUS_PICKED) {
+	} elseif ($this->status == MasterShipment::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
 		print '<input type="submit" class="button" value="'.$langs->trans('Load').'" name="load" id="loadbutton">';
 		print '</td>';

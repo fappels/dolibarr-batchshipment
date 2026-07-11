@@ -148,14 +148,14 @@ class MasterShipment extends CommonObject
 		"date_creation" => array("type" => "datetime", "label" => "DateCreation", "enabled" => "1", 'position' => 90, 'notnull' => 1, "visible" => "-5",),
 		"date_validation" => array("type" => "datetime", "label" => "DateValidation", "enabled" => "1", 'position' => 95, 'notnull' => 0, "visible" => "-5",),
 		"date_pick" => array("type" => "datetime", "label" => "Datepick", "enabled" => "1", 'position' => 100, 'notnull' => 0, "visible" => "-5",),
-		"date_load" => array("type" => "datetime", "label" => "Dateload", "enabled" => "1", 'position' => 100, 'notnull' => 0, "visible" => "-5",),
+		"date_load" => array("type" => "datetime", "label" => "Dateload", "enabled" => "getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')", 'position' => 100, 'notnull' => 0, "visible" => "-5",),
 		"date_ship" => array("type" => "datetime", "label" => "Dateship", "enabled" => "1", 'position' => 105, 'notnull' => 0, "visible" => "-5",),
 		"tms" => array("type" => "timestamp", "label" => "DateModification", "enabled" => "1", 'position' => 110, 'notnull' => 0, "visible" => "0",),
 		"fk_user_creat" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserAuthor", "picto" => "user", "enabled" => "1", 'position' => 115, 'notnull' => 1, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
 		"fk_user_modif" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserModif", "picto" => "user", "enabled" => "1", 'position' => 120, 'notnull' => -1, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
 		"fk_user_valid" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserValidation", "picto" => "user", "enabled" => "1", 'position' => 125, 'notnull' => 0, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
 		"fk_user_pick" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserPick", "picto" => "user", "enabled" => "1", 'position' => 127, 'notnull' => 0, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
-		"fk_user_load" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserLoad", "picto" => "user", "enabled" => "1", 'position' => 130, 'notnull' => 0, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
+		"fk_user_load" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserLoad", "picto" => "user", "enabled" => "getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')", 'position' => 130, 'notnull' => 0, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
 		"fk_user_ship" => array("type" => "integer:User:user/class/user.class.php", "label" => "UserShip", "picto" => "user", "enabled" => "1", 'position' => 135, 'notnull' => 0, "visible" => "-5", "css" => "maxwidth500 widthcentpercentminusxx", "csslist" => "tdoverflowmax150",),
 		"last_main_doc" => array("type" => "varchar(255)", "label" => "Lastmaindoc", "enabled" => "1", 'position' => 140, 'notnull' => 0, "visible" => "0",),
 		"import_key" => array("type" => "varchar(14)", "label" => "ImportId", "enabled" => "1", 'position' => 900, 'notnull' => 0, "visible" => "-2",),
@@ -979,9 +979,17 @@ class MasterShipment extends CommonObject
 			// End call triggers
 		}
 
+		// when two stage picking is disabled, there is no separate loading step, so create shipments now
+		if (!$error && !$twoStagePicking) {
+			$result = $this->createShipments($user, $notrigger, 'qty_pick');
+			if ($result < 0) {
+				$error++;
+			}
+		}
+
 		// Set new ref and current status
 		if (!$error) {
-			$this->status = self::STATUS_PICKED;
+			$this->status = $newStatus;
 		}
 
 		if (!$error) {
@@ -1054,105 +1062,11 @@ class MasterShipment extends CommonObject
 			// End call triggers
 		}
 
-		// create shipments
-		if (!$error) {
-			// get packages
-			$shipment = array();
-			$order = array();
-			$i=0;
-			// create shipments
-			foreach ($this->lines as $line) {
-				/** @var MasterShipmentLine $line */
-				$i++;
-				$toWarehouse = $line->fk_entrepot;
-
-				if (empty($shipment[$line->fk_commande])) {
-					$order[$line->fk_commande] = new Commande($this->db);
-					$order[$line->fk_commande]->fetch($line->fk_commande);
-					$shipment[$line->fk_commande] = new Expedition($this->db);
-					$shipment[$line->fk_commande]->origin_id = $line->fk_commande;
-					$shipment[$line->fk_commande]->origin_type = 'commande';
-					$shipment[$line->fk_commande]->fk_project = $this->fk_project;
-					$shipment[$line->fk_commande]->socid = $order[$line->fk_commande]->socid;
-					$shipment[$line->fk_commande]->ref_customer = $order[$line->fk_commande]->ref_client;
-					$shipment[$line->fk_commande]->date_delivery = $this->date_delivery;
-					$shipment[$line->fk_commande]->shipping_method_id = $this->fk_shipping_method;
-					$shipment[$line->fk_commande]->tracking_number = $this->tracking_number;
-					$shipment[$line->fk_commande]->note_private = $order[$line->fk_commande]->note_private;
-					$shipment[$line->fk_commande]->note_public = $order[$line->fk_commande]->note_public;
-					$shipment[$line->fk_commande]->fk_incoterms = $order[$line->fk_commande]->fk_incoterms;
-					$shipment[$line->fk_commande]->location_incoterms = $order[$line->fk_commande]->location_incoterms;
-					$result = $shipment[$line->fk_commande]->create($user);
-					if ($result <= 0) {
-						if ($result == 0) {
-							$this->error = 'Shipment not created';
-						} else {
-							$this->error = $shipment[$line->fk_commande]->error;
-						}
-						$error++;
-					}
-				}
-				if (!$error) {
-					$shipmentLineId = $shipment[$line->fk_commande]->create_line($toWarehouse, $line->fk_commande_line,  $line->qty_load);
-					if ($shipmentLineId <= 0) {
-						if ($shipmentLineId == 0) {
-							$this->error = 'Shipment line not created';
-						} else {
-							$this->error = $shipment[$line->fk_commande]->error;
-						}
-						$error++;
-					} else {
-						$shipmentLineIds[$line->id] = $shipmentLineId;
-					}
-					if (!empty($conf->productbatch->enabled) && $line->fk_productbatch > 0) {
-						dol_include_once('/expedition/class/expeditionlinebatch.class.php');
-						dol_include_once('/product/stock/class/productbatch.class.php');
-						dol_include_once('/product/stock/class/productlot.class.php');
-						$productBatch = new Productbatch($this->db);
-						$productBatch->fetch($line->fk_productbatch);
-						$productLot = new Productlot($this->db);
-						$productLot->fetch(null, $line->fk_product, $productBatch->batch);
-						$expeditionLineBatch = new ExpeditionLineBatch($this->db);
-						$expeditionLineBatch->sellby = $productLot->sellby;
-						$expeditionLineBatch->eatby = $productLot->eatby;
-						$expeditionLineBatch->batch = $productBatch->batch;
-						$expeditionLineBatch->qty = $line->qty_load;
-						$expeditionLineBatch->fk_origin_stock = $productBatch->fk_product_stock;
-						$expeditionLineBatch->create($shipmentLineId);
-					}
-				}
-			}
-
-			if (!$error) {
-				// validate shipments
-				foreach ($this->lines as $line) {
-					/** @var MasterShipmentLine $line */
-					if ($shipment[$line->fk_commande]->status == 0) {
-						// validate shipment
-						if (!empty($line->fk_commande)) {
-							$result = $shipment[$line->fk_commande]->valid($user);
-
-							if ($result < 0) {
-								$error++;
-								$this->errors = $shipment[$line->fk_commande]->errors;
-								break;
-							}
-							// link shipment to mastershipment
-							if ($this->add_object_linked('shipping', $shipment[$line->fk_commande]->id, $user) < 0) {
-								$error++;
-								break;
-							}
-						}
-					}
-					$line->fk_expedition = $shipment[$line->fk_commande]->id;
-					$line->fk_expedition_line = $shipmentLineIds[$line->id];
-					$result = $line->update($user, $notrigger);
-					if ($result < 0) {
-						$error++;
-						$this->errors = $line->errors;
-						break;
-					}
-				}
+		// create shipments (skipped when two stage picking is disabled: shipments are already created on picking)
+		if (!$error && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
+			$result = $this->createShipments($user, $notrigger);
+			if ($result < 0) {
+				$error++;
 			}
 		}
 
@@ -1162,6 +1076,128 @@ class MasterShipment extends CommonObject
 			return 1;
 		} else {
 			$this->db->rollback();
+			return -1;
+		}
+	}
+
+	/**
+	 *	Create (and validate) a shipment per order from the master shipment lines, and link
+	 *	each master shipment line to its resulting shipment line.
+	 *	Requires $this->lines to be loaded.
+	 *
+	 *	@param		User	$user     		User creating the shipments
+	 *  @param		int		$notrigger		1=Does not execute triggers, 0=execute triggers
+	 *  @param		string	$qtyfield		Line property to use as shipped qty: 'qty_load' (default) or 'qty_pick'
+	 *	@return  	int						<0 if KO, >0 if OK
+	 */
+	public function createShipments($user, $notrigger = 0, $qtyfield = 'qty_load')
+	{
+		global $conf;
+
+		$error = 0;
+
+		// get packages
+		$shipment = array();
+		$order = array();
+		$shipmentLineIds = array();
+		// create shipments
+		foreach ($this->lines as $line) {
+			/** @var MasterShipmentLine $line */
+			$toWarehouse = $line->fk_entrepot;
+			$qtyToShip = $qtyfield == 'qty_pick' ? $line->qty_pick : $line->qty_load;
+
+			if (empty($shipment[$line->fk_commande])) {
+				$order[$line->fk_commande] = new Commande($this->db);
+				$order[$line->fk_commande]->fetch($line->fk_commande);
+				$shipment[$line->fk_commande] = new Expedition($this->db);
+				$shipment[$line->fk_commande]->origin_id = $line->fk_commande;
+				$shipment[$line->fk_commande]->origin_type = 'commande';
+				$shipment[$line->fk_commande]->fk_project = $this->fk_project;
+				$shipment[$line->fk_commande]->socid = $order[$line->fk_commande]->socid;
+				$shipment[$line->fk_commande]->ref_customer = $order[$line->fk_commande]->ref_client;
+				$shipment[$line->fk_commande]->date_delivery = $this->date_delivery;
+				$shipment[$line->fk_commande]->shipping_method_id = $this->fk_shipping_method;
+				$shipment[$line->fk_commande]->tracking_number = $this->tracking_number;
+				$shipment[$line->fk_commande]->note_private = $order[$line->fk_commande]->note_private;
+				$shipment[$line->fk_commande]->note_public = $order[$line->fk_commande]->note_public;
+				$shipment[$line->fk_commande]->fk_incoterms = $order[$line->fk_commande]->fk_incoterms;
+				$shipment[$line->fk_commande]->location_incoterms = $order[$line->fk_commande]->location_incoterms;
+				$result = $shipment[$line->fk_commande]->create($user);
+				if ($result <= 0) {
+					if ($result == 0) {
+						$this->error = 'Shipment not created';
+					} else {
+						$this->error = $shipment[$line->fk_commande]->error;
+					}
+					$error++;
+				}
+			}
+			if (!$error) {
+				$shipmentLineId = $shipment[$line->fk_commande]->create_line($toWarehouse, $line->fk_commande_line,  $qtyToShip);
+				if ($shipmentLineId <= 0) {
+					if ($shipmentLineId == 0) {
+						$this->error = 'Shipment line not created';
+					} else {
+						$this->error = $shipment[$line->fk_commande]->error;
+					}
+					$error++;
+				} else {
+					$shipmentLineIds[$line->id] = $shipmentLineId;
+				}
+				if (!empty($conf->productbatch->enabled) && $line->fk_productbatch > 0) {
+					dol_include_once('/expedition/class/expeditionlinebatch.class.php');
+					dol_include_once('/product/stock/class/productbatch.class.php');
+					dol_include_once('/product/stock/class/productlot.class.php');
+					$productBatch = new Productbatch($this->db);
+					$productBatch->fetch($line->fk_productbatch);
+					$productLot = new Productlot($this->db);
+					$productLot->fetch(null, $line->fk_product, $productBatch->batch);
+					$expeditionLineBatch = new ExpeditionLineBatch($this->db);
+					$expeditionLineBatch->sellby = $productLot->sellby;
+					$expeditionLineBatch->eatby = $productLot->eatby;
+					$expeditionLineBatch->batch = $productBatch->batch;
+					$expeditionLineBatch->qty = $qtyToShip;
+					$expeditionLineBatch->fk_origin_stock = $productBatch->fk_product_stock;
+					$expeditionLineBatch->create($shipmentLineId);
+				}
+			}
+		}
+
+		if (!$error) {
+			// validate shipments
+			foreach ($this->lines as $line) {
+				/** @var MasterShipmentLine $line */
+				if ($shipment[$line->fk_commande]->status == 0) {
+					// validate shipment
+					if (!empty($line->fk_commande)) {
+						$result = $shipment[$line->fk_commande]->valid($user);
+
+						if ($result < 0) {
+							$error++;
+							$this->errors = $shipment[$line->fk_commande]->errors;
+							break;
+						}
+						// link shipment to mastershipment
+						if ($this->add_object_linked('shipping', $shipment[$line->fk_commande]->id, $user) < 0) {
+							$error++;
+							break;
+						}
+					}
+				}
+				$line->fk_expedition = $shipment[$line->fk_commande]->id;
+				$line->fk_expedition_line = $shipmentLineIds[$line->id];
+				$result = $line->update($user, $notrigger);
+				if ($result < 0) {
+					$error++;
+					$this->errors = $line->errors;
+					break;
+				}
+			}
+		}
+
+		if (!$error) {
+			return 1;
+		} else {
 			return -1;
 		}
 	}
@@ -1602,10 +1638,12 @@ class MasterShipment extends CommonObject
 	 * @param	User	$user			Object user that modify
 	 * @param	array	$linesChecked	lines to pick
 	 * @param	array	$qtysToPick		qty's to pick
+	 * @param	array	$comments		comments for pick
+	 * @param	array	$productbatchs	product batch id's picked
 	 * @param	array	$warehouses		warehouses to pick
 	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
 	 */
-	public function pick($user, $linesChecked, $qtysToPick, $warehouses)
+	public function pick($user, $linesChecked, $qtysToPick, $comments, $productbatchs, $warehouses)
 	{
 		$error = 0;
 
@@ -1628,7 +1666,9 @@ class MasterShipment extends CommonObject
 						price2num($qtysToPick[$key]),
 						$line->fk_commande,
 						$warehouses[$key],
-						0
+						0,
+						$comments[$key],
+						$productbatchs[$key]
 					);
 					if ($result < 0) {
 						$error++;
@@ -1660,13 +1700,10 @@ class MasterShipment extends CommonObject
 	 * @param	array	$comments		comments  for load
 	 * @param	array	$productbatchs	product batch id's load
 	 * @param	array	$warehouses		warehouses to pick
-	 * @param	int		$notrigger		1=Does not execute triggers, 0=Execute triggers
 	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
 	 */
-	public function load($user, $linesChecked, $qtysToLoad, $comments, $productbatchs, $warehouses, $notrigger = 0)
+	public function load($user, $linesChecked, $qtysToLoad, $comments, $productbatchs, $warehouses)
 	{
-		global $langs, $conf;
-
 		$error = 0;
 		// Protection
 		if ($this->status != self::STATUS_PICKED) {
@@ -1677,16 +1714,21 @@ class MasterShipment extends CommonObject
 			foreach ($linesChecked as $checkKey=>$lineId) {
 				$line = new MasterShipmentLine($this->db);
 				$result = $line->fetch($lineId);
-				if (!$error && $result > 0) {
-					$line->comment = $comments[$checkKey];
-					$line->qty_load = $qtysToLoad[$checkKey];
-					$line->fk_productbatch = $productbatchs[$checkKey];
-					$line->fk_entrepot = $warehouses[$checkKey];
-					$line->status = MasterShipmentLine::STATUS_LOADED;
-					$result = $line->update($user, $notrigger);
+				if ($result > 0) {
+					$result = $this->updateLine($user,
+						$line->id,
+						MasterShipmentLine::STATUS_LOADED,
+						$line->fk_product,
+						$line->qty,
+						$line->qty_pick,
+						$line->fk_commande,
+						$warehouses[$checkKey],
+						$qtysToLoad[$checkKey],
+						$comments[$checkKey],
+						$productbatchs[$checkKey]
+					);
 					if ($result < 0) {
 						$error++;
-						$this->errors = $line->errors;
 						break;
 					}
 				} else {
@@ -1772,7 +1814,7 @@ class MasterShipment extends CommonObject
 
 		$error = 0;
 		// Protection
-		if ($this->status != self::STATUS_SHIPMENTONPROCESS) {
+		if (($this->status != self::STATUS_SHIPMENTONPROCESS && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) || $this->status != self::STATUS_PICKED) {
 			return 0;
 		}
 

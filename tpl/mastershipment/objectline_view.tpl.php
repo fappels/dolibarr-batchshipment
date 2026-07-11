@@ -114,9 +114,11 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay++;
 	print '<td class="linecolqty right">' . $line->qty_pick;
 	print '</td>';
-	$coldisplay++;
-	print '<td class="linecolqty right">' . $line->qty_load;
-	print '</td>';
+	if (getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
+		$coldisplay++;
+		print '<td class="linecolqty right">' . $line->qty_load;
+		print '</td>';
+	}
 	if (!empty($conf->productbatch->enabled)) {
 		$coldisplay++;
 		print '<td class="linecoldescription right">';
@@ -147,7 +149,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '<input type="hidden" name="fk_entrepot['.($i + 1).']" value="'.$fk_entrepot.'">';
 	print '</td>';
 	$coldisplay++;
-	if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS) {
+	if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS || !getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
 		print '<td class="linecol">';
 		print $objectline->showOutputField($objectline->fields['fk_expedition'], 'fk_expedition', $line->fk_expedition);
 		print '</td>';
@@ -226,9 +228,11 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		$coldisplay++;
 		print '<td class="linecolqty right">' . $line->qty_pick;
 		print '</td>';
-		$coldisplay++;
-		print '<td class="linecolqty right">' . $line->qty_load;
-		print '</td>';
+		if (getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
+			$coldisplay++;
+			print '<td class="linecolqty right">' . $line->qty_load;
+			print '</td>';
+		}
 	}
 	if (!empty($conf->productbatch->enabled)) {
 		$coldisplay++;
@@ -305,7 +309,9 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		$disabled = 1;
 	}
 	if ($object->status >= MasterShipment::STATUS_VALIDATED) {
-		print '<td class="linecoldescription right">'.$line->comment.'</td>';
+		print '<td class="linecoldescription right">';
+		print '<input type="text" name="comment['.($i + 1).']" id="line_comment['.($i + 1).']" class="flat right" value="'.(isset($comments[$i+1]) ? $comments[$i+1] : $line->comment).'" ' . ($disabled ? 'disabled' : '') . '>';
+		print '</td>';
 		$coldisplay++;
 	}
 	print '<td class="linecol right">' . $line->getLabelStatus(3) . '</td>';

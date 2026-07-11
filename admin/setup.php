@@ -98,102 +98,20 @@ if (!$user->admin) {
 
 $arrayofparameters = array(
 	//'MASTERSHIPMENT_DEFAULT_PICKING_LOCATION'=>array('type'=>'entrepot', 'enabled'=>1),
-	//'MASTERSHIPMENT_DEFAULT_LOADING_LOCATION'=>array('type'=>'entrepot', 'enabled'=>1)
+	//'MASTERSHIPMENT_DEFAULT_LOADING_LOCATION'=>array('type'=>'entrepot', 'enabled'=>1),
+	'BATCHSHIPMENT_TWO_STAGE_PICKING'=>array('type'=>'yesno', 'enabled'=>1)
 );
+ /*
 
+ Sounds good — stopping here. Quick recap of what's in place for BATCHSHIPMENT_TWO_STAGE_PICKING:
 
-// Set this to 1 to use the factory to manage constants. Warning, the generated module will be compatible with version v15+ only
-$useFormSetup = 0;
-if ($useFormSetup) {
-	if (!class_exists('FormSetup')) {
-		require_once DOL_DOCUMENT_ROOT.'/core/class/html.formsetup.class.php';
-	}
-	$formSetup = new FormSetup($db);
-
-	// Enter here all parameters in your setup page
-
-	// Setup conf for selection of an URL
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM1');
-	$item->fieldParams['isMandatory'] = 1;
-	$item->fieldAttr['placeholder'] = (empty($_SERVER['HTTPS']) ? 'http://' : 'https://') . $_SERVER['HTTP_HOST'];
-	$item->cssClass = 'minwidth500';
-
-	// Setup conf for selection of a simple string input
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM2');
-	$item->defaultFieldValue = 'default value';
-	$item->fieldAttr['placeholder'] = 'A placeholder here';
-	$item->helpText = 'Tooltip text';
-
-	// Setup conf for selection of a simple textarea input but we replace the text of field title
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM3');
-	$item->nameText = $item->getNameText().' more html text ';
-
-	// Setup conf for a selection of a Thirdparty
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM4');
-	$item->setAsThirdpartyType();
-
-	// Setup conf for a selection of a boolean
-	$formSetup->newItem('BATCHSHIPMENT_MYPARAM5')->setAsYesNo();
-
-	// Setup conf for a selection of an Email template of type thirdparty
-	$formSetup->newItem('BATCHSHIPMENT_MYPARAM6')->setAsEmailTemplate('thirdparty');
-
-	// Setup conf for a selection of a secured key
-	//$formSetup->newItem('BATCHSHIPMENT_MYPARAM7')->setAsSecureKey();
-
-	// Setup conf for a selection of a Product
-	$formSetup->newItem('BATCHSHIPMENT_MYPARAM8')->setAsProduct();
-
-	// Add a title for a new section
-	$formSetup->newItem('NewSection')->setAsTitle();
-
-	$TField = array(
-		'test01' => $langs->trans('test01'),
-		'test02' => $langs->trans('test02'),
-		'test03' => $langs->trans('test03'),
-		'test04' => $langs->trans('test04'),
-		'test05' => $langs->trans('test05'),
-		'test06' => $langs->trans('test06'),
-	);
-
-	// Setup conf for a simple combo list
-	$formSetup->newItem('BATCHSHIPMENT_MYPARAM9')->setAsSelect($TField);
-
-	// Setup conf for a multiselect combo list
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM10');
-	$item->setAsMultiSelect($TField);
-	$item->helpText = $langs->transnoentities('BATCHSHIPMENT_MYPARAM10');
-
-	// Setup conf for a category selection
-	$formSetup->newItem('BATCHSHIPMENT_CATEGORY_ID_XXX')->setAsCategory('product');
-
-	// Setup conf BATCHSHIPMENT_MYPARAM10
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM10');
-	$item->setAsColor();
-	$item->defaultFieldValue = '#FF0000';
-	//$item->fieldValue = '';
-	//$item->fieldAttr = array() ; // fields attribute only for compatible fields like input text
-	//$item->fieldOverride = false; // set this var to override field output will override $fieldInputOverride and $fieldOutputOverride too
-	//$item->fieldInputOverride = false; // set this var to override field input
-	//$item->fieldOutputOverride = false; // set this var to override field output
-
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM11')->setAsHtml();
-	$item->nameText = $item->getNameText().' more html text ';
-	$item->fieldInputOverride = '';
-	$item->helpText = $langs->transnoentities('HelpMessage');
-	$item->cssClass = 'minwidth500';
-
-	$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM12');
-	$item->fieldOverride = "Value forced, can't be modified";
-	$item->cssClass = 'minwidth500';
-
-	//$item = $formSetup->newItem('BATCHSHIPMENT_MYPARAM13')->setAsDate();	// Not yet implemented
-
-	// End of definition of parameters
-
-
-	$setupnotempty += count($formSetup->items);
-}
+Loading-stage buttons (Load/UndoAllLoad, ValidateLoading, CheckLoad-at-Loaded) hidden in one-stage mode.
+Loaded-quantity column hidden in one-stage mode.
+pick()/load() refactored to reuse updateLine(), now also carrying comments/batches.
+Shipment creation extracted into createShipments(), reusable with a qtyfield selector.
+validatePicked() jumps straight to STATUS_SHIPMENTONPROCESS and creates shipments immediately when two-stage picking is off, so the existing Loaded-status UI (Shipment column, Check button, checking form) works without special-casing.
+Known open item from last turn: the checkbox auto-tick convenience in objectline_view.tpl.php (keyed on STATUS_LOADED+STATUS_SHIPMENTONPROCESS) won't auto-select lines in one-stage mode since lines stay STATUS_PICKED — manual ticking still works, just not pre-checked. Worth revisiting whenever you pick this back up.
+*/
 
 
 $dirmodels = array_merge(array('/'), (array) $conf->modules_parts['models']);
@@ -343,119 +261,103 @@ print dol_get_fiche_head($head, 'settings', $langs->trans($title), -1, "batchshi
 // Setup page goes here
 echo '<span class="opacitymedium">'.$langs->trans("BatchShipmentSetupPage").'</span><br><br>';
 
+$formproduct=new FormProduct($db);
+print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
+print '<input type="hidden" name="token" value="'.newToken().'">';
+print '<input type="hidden" name="action" value="update">';
 
-/*if ($action == 'edit') {
- print $formSetup->generateOutput(true);
- print '<br>';
- } elseif (!empty($formSetup->items)) {
- print $formSetup->generateOutput();
- print '<div class="tabsAction">';
- print '<a class="butAction" href="'.$_SERVER["PHP_SELF"].'?action=edit&token='.newToken().'">'.$langs->trans("Modify").'</a>';
- print '</div>';
- }
- */
-if ($useFormSetup && !empty($formSetup->items)) {
-	print $formSetup->generateOutput(true);
-	print '<br>';
-} else {
-	$formproduct=new FormProduct($db);
-	print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
-	print '<input type="hidden" name="token" value="'.newToken().'">';
-	print '<input type="hidden" name="action" value="update">';
+print '<table class="noborder centpercent">';
+print '<tr class="liste_titre"><td class="titlefield">'.$langs->trans("Parameter").'</td><td>'.$langs->trans("Value").'</td></tr>';
 
-	print '<table class="noborder centpercent">';
-	print '<tr class="liste_titre"><td class="titlefield">'.$langs->trans("Parameter").'</td><td>'.$langs->trans("Value").'</td></tr>';
+foreach ($arrayofparameters as $constname => $val) {
+	if ($val['enabled']==1) {
+		$setupnotempty++;
+		print '<tr class="oddeven"><td>';
+		$tooltiphelp = (($langs->trans($constname . 'Tooltip') != $constname . 'Tooltip') ? $langs->trans($constname . 'Tooltip') : '');
+		print '<span id="helplink'.$constname.'" class="spanforparamtooltip">'.$form->textwithpicto($langs->trans($constname), $tooltiphelp, 1, 'info', '', 0, 3, 'tootips'.$constname).'</span>';
+		print '</td><td>';
+		if ($val['type'] == 'entrepot') {
+			print $formproduct->selectWarehouses($conf->global->$constname, $constname, 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, null, 'maxwidth400');
+		} elseif ($val['type'] == 'textarea') {
+			print '<textarea class="flat" name="'.$constname.'" id="'.$constname.'" cols="50" rows="5" wrap="soft">' . "\n";
+			print $conf->global->{$constname};
+			print "</textarea>\n";
+		} elseif ($val['type']== 'html') {
+			require_once DOL_DOCUMENT_ROOT . '/core/class/doleditor.class.php';
+			$doleditor = new DolEditor($constname, $conf->global->{$constname}, '', 160, 'dolibarr_notes', '', false, false, $conf->fckeditor->enabled, ROWS_5, '90%');
+			$doleditor->Create();
+		} elseif ($val['type'] == 'yesno') {
+			print $form->selectyesno($constname, $conf->global->{$constname}, 1);
+		} elseif (preg_match('/emailtemplate:/', $val['type'])) {
+			include_once DOL_DOCUMENT_ROOT . '/core/class/html.formmail.class.php';
+			$formmail = new FormMail($db);
 
-	foreach ($arrayofparameters as $constname => $val) {
-		if ($val['enabled']==1) {
-			$setupnotempty++;
-			print '<tr class="oddeven"><td>';
-			$tooltiphelp = (($langs->trans($constname . 'Tooltip') != $constname . 'Tooltip') ? $langs->trans($constname . 'Tooltip') : '');
-			print '<span id="helplink'.$constname.'" class="spanforparamtooltip">'.$form->textwithpicto($langs->trans($constname), $tooltiphelp, 1, 'info', '', 0, 3, 'tootips'.$constname).'</span>';
-			print '</td><td>';
-			if ($val['type'] == 'entrepot') {
-				print $formproduct->selectWarehouses($conf->global->$constname, $constname, 'warehouseopen,warehouseinternal', 1, 0, 0, '', 0, 0, null, 'maxwidth400');
-			} elseif ($val['type'] == 'textarea') {
-				print '<textarea class="flat" name="'.$constname.'" id="'.$constname.'" cols="50" rows="5" wrap="soft">' . "\n";
-				print $conf->global->{$constname};
-				print "</textarea>\n";
-			} elseif ($val['type']== 'html') {
-				require_once DOL_DOCUMENT_ROOT . '/core/class/doleditor.class.php';
-				$doleditor = new DolEditor($constname, $conf->global->{$constname}, '', 160, 'dolibarr_notes', '', false, false, $conf->fckeditor->enabled, ROWS_5, '90%');
-				$doleditor->Create();
-			} elseif ($val['type'] == 'yesno') {
-				print $form->selectyesno($constname, $conf->global->{$constname}, 1);
-			} elseif (preg_match('/emailtemplate:/', $val['type'])) {
-				include_once DOL_DOCUMENT_ROOT . '/core/class/html.formmail.class.php';
-				$formmail = new FormMail($db);
-
-				$tmp = explode(':', $val['type']);
-				$nboftemplates = $formmail->fetchAllEMailTemplate($tmp[1], $user, null, 1); // We set lang=null to get in priority record with no lang
-				//$arraydefaultmessage = $formmail->getEMailTemplate($db, $tmp[1], $user, null, 0, 1, '');
-				$arrayofmessagename = array();
-				if (is_array($formmail->lines_model)) {
-					foreach ($formmail->lines_model as $modelmail) {
-						//var_dump($modelmail);
-						$moreonlabel = '';
-						if (!empty($arrayofmessagename[$modelmail->label])) {
-							$moreonlabel = ' <span class="opacitymedium">(' . $langs->trans("SeveralLangugeVariatFound") . ')</span>';
-						}
-						// The 'label' is the key that is unique if we exclude the language
-						$arrayofmessagename[$modelmail->id] = $langs->trans(preg_replace('/\(|\)/', '', $modelmail->label)) . $moreonlabel;
+			$tmp = explode(':', $val['type']);
+			$nboftemplates = $formmail->fetchAllEMailTemplate($tmp[1], $user, null, 1); // We set lang=null to get in priority record with no lang
+			//$arraydefaultmessage = $formmail->getEMailTemplate($db, $tmp[1], $user, null, 0, 1, '');
+			$arrayofmessagename = array();
+			if (is_array($formmail->lines_model)) {
+				foreach ($formmail->lines_model as $modelmail) {
+					//var_dump($modelmail);
+					$moreonlabel = '';
+					if (!empty($arrayofmessagename[$modelmail->label])) {
+						$moreonlabel = ' <span class="opacitymedium">(' . $langs->trans("SeveralLangugeVariatFound") . ')</span>';
 					}
+					// The 'label' is the key that is unique if we exclude the language
+					$arrayofmessagename[$modelmail->id] = $langs->trans(preg_replace('/\(|\)/', '', $modelmail->label)) . $moreonlabel;
 				}
-				print $form->selectarray($constname, $arrayofmessagename, $conf->global->{$constname}, 'None', 0, 0, '', 0, 0, 0, '', '', 1);
-			} elseif (preg_match('/category:/', $val['type'])) {
-				require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
-				require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
-				$formother = new FormOther($db);
-
-				$tmp = explode(':', $val['type']);
-				print img_picto('', 'category', 'class="pictofixedwidth"');
-				print $formother->select_categories($tmp[1],  $conf->global->{$constname}, $constname, 0, $langs->trans('CustomersProspectsCategoriesShort'));
-			} elseif (preg_match('/thirdparty_type/', $val['type'])) {
-				require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
-				$formcompany = new FormCompany($db);
-				print $formcompany->selectProspectCustomerType($conf->global->{$constname}, $constname);
-			} elseif ($val['type'] == 'securekey') {
-				print '<input required="required" type="text" class="flat" id="'.$constname.'" name="'.$constname.'" value="'.(GETPOST($constname, 'alpha') ?GETPOST($constname, 'alpha') : $conf->global->{$constname}).'" size="40">';
-				if (!empty($conf->use_javascript_ajax)) {
-					print '&nbsp;'.img_picto($langs->trans('Generate'), 'refresh', 'id="generate_token'.$constname.'" class="linkobject"');
-				}
-				if (!empty($conf->use_javascript_ajax)) {
-					print "\n".'<script type="text/javascript">';
-					print '$(document).ready(function () {
-					$("#generate_token'.$constname.'").click(function() {
-						$.get( "'.DOL_URL_ROOT.'/core/ajax/security.php", {
-							action: \'getrandompassword\',
-							generic: true
-						},
-						function(token) {
-							$("#'.$constname.'").val(token);
-						});
-						});
-				});';
-					print '</script>';
-				}
-			} elseif ($val['type'] == 'product') {
-				if (!empty($conf->product->enabled) || !empty($conf->service->enabled)) {
-					$selected = (empty($conf->global->$constname) ? '' : $conf->global->$constname);
-					$form->select_produits($selected, $constname, '', 0);
-				}
-			} else {
-				print '<input name="'.$constname.'"  class="flat '.(empty($val['css']) ? 'minwidth200' : $val['css']).'" value="'.$conf->global->{$constname}.'">';
 			}
-			print '</td></tr>';
+			print $form->selectarray($constname, $arrayofmessagename, $conf->global->{$constname}, 'None', 0, 0, '', 0, 0, 0, '', '', 1);
+		} elseif (preg_match('/category:/', $val['type'])) {
+			require_once DOL_DOCUMENT_ROOT.'/categories/class/categorie.class.php';
+			require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
+			$formother = new FormOther($db);
+
+			$tmp = explode(':', $val['type']);
+			print img_picto('', 'category', 'class="pictofixedwidth"');
+			print $formother->select_categories($tmp[1],  $conf->global->{$constname}, $constname, 0, $langs->trans('CustomersProspectsCategoriesShort'));
+		} elseif (preg_match('/thirdparty_type/', $val['type'])) {
+			require_once DOL_DOCUMENT_ROOT.'/core/class/html.formcompany.class.php';
+			$formcompany = new FormCompany($db);
+			print $formcompany->selectProspectCustomerType($conf->global->{$constname}, $constname);
+		} elseif ($val['type'] == 'securekey') {
+			print '<input required="required" type="text" class="flat" id="'.$constname.'" name="'.$constname.'" value="'.(GETPOST($constname, 'alpha') ?GETPOST($constname, 'alpha') : $conf->global->{$constname}).'" size="40">';
+			if (!empty($conf->use_javascript_ajax)) {
+				print '&nbsp;'.img_picto($langs->trans('Generate'), 'refresh', 'id="generate_token'.$constname.'" class="linkobject"');
+			}
+			if (!empty($conf->use_javascript_ajax)) {
+				print "\n".'<script type="text/javascript">';
+				print '$(document).ready(function () {
+				$("#generate_token'.$constname.'").click(function() {
+					$.get( "'.DOL_URL_ROOT.'/core/ajax/security.php", {
+						action: \'getrandompassword\',
+						generic: true
+					},
+					function(token) {
+						$("#'.$constname.'").val(token);
+					});
+					});
+			});';
+				print '</script>';
+			}
+		} elseif ($val['type'] == 'product') {
+			if (!empty($conf->product->enabled) || !empty($conf->service->enabled)) {
+				$selected = (empty($conf->global->$constname) ? '' : $conf->global->$constname);
+				$form->select_produits($selected, $constname, '', 0);
+			}
+		} else {
+			print '<input name="'.$constname.'"  class="flat '.(empty($val['css']) ? 'minwidth200' : $val['css']).'" value="'.$conf->global->{$constname}.'">';
 		}
+		print '</td></tr>';
 	}
-	print '</table>';
-
-	print '<br><div class="center">';
-	print '<input class="button button-save" type="submit" value="'.$langs->trans("Save").'">';
-	print '</div>';
-
-	print '</form>';
 }
+print '</table>';
+
+print '<br><div class="center">';
+print '<input class="button button-save" type="submit" value="'.$langs->trans("Save").'">';
+print '</div>';
+
+print '</form>';
 
 
 foreach ($myTmpObjects as $myTmpObjectKey => $myTmpObjectArray) {

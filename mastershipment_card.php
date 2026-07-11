@@ -271,15 +271,19 @@ if (empty($reshook)) {
 		$result = 0;
 		$linesChecked = GETPOST('line_checkbox', 'array');
 		$qtysToPick = GETPOST('qty_pick', 'array');
+		$comments = GETPOST('comment', 'array');
+		$productbatchs = GETPOST('fk_productbatch', 'array');
 		$warehouses = GETPOST('fk_entrepot', 'array');
 		if (GETPOST('pick')) {
-			$result = $object->pick($user, $linesChecked, $qtysToPick, $warehouses);
+			$result = $object->pick($user, $linesChecked, $qtysToPick, $comments, $productbatchs, $warehouses);
 		}
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
 		} else {
 			unset($_POST['line_checkbox']);
 			unset($_POST['qty_pick']);
+			unset($_POST['comment']);
+			unset($_POST['fk_productbatch']);
 			unset($_POST['fk_entrepot']);
 		}
 		$action = '';
@@ -803,7 +807,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		// Show object lines
 		$result = $object->getLinesArray();
 
-		if ($object->status == MasterShipment::STATUS_SHIPMENTONPROCESS) {
+		if ($object->status == MasterShipment::STATUS_SHIPMENTONPROCESS || (!getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING') && $object->status == MasterShipment::STATUS_PICKED)) {
 			print '	<form name="checking" id="check" action="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'" method="POST">
 			<input type="hidden" name="token" value="' . newToken().'">
 			<input type="hidden" name="action" value="confirm_check">
@@ -997,7 +1001,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			}
 
 			// Validate Loading
-			if ($object->status == $object::STATUS_PICKED) {
+			if ($object->status == $object::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
 				if (empty($object->table_element_line) || (is_array($object->lines) && count($object->lines) > 0)) {
 					$buttonParams = array();
 					if (!$allowValidateLoading) $buttonParams['attr']['title'] = $disableValidateLoadingWarning;
@@ -1009,7 +1013,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			}
 
 			// close
-			if ($object->status == $object::STATUS_SHIPMENTONPROCESS) {
+			if ($object->status == $object::STATUS_SHIPMENTONPROCESS || ($object->status == $object::STATUS_PICKED && !getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING'))) {
 				if (empty($object->table_element_line) || (is_array($object->lines) && count($object->lines) > 0)) {
 					$buttonParams = array();
 					if (!$allowClosing) $buttonParams['attr']['title'] = $disableCloseWarning;
