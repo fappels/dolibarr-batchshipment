@@ -2348,7 +2348,7 @@ class MasterShipment extends CommonObject
 				$batch->fetch($line->fk_productbatch);
 
 				if ($batch->qty < $line->qty) {
-					$stockUsedForBatch[$batch->id] += $batch->qty;
+					!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $batch->qty : $stockUsedForBatch[$batch->id] = $batch->qty;
 				} else {
 					$stockUsedForBatch[$batch->id] += $line->qty;
 				}

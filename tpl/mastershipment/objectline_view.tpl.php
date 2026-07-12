@@ -188,7 +188,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		// inputs to store changed warehouse
 		print '<input type="hidden" name="changedline" value="">';
 		print '<input type="hidden" name="changedwarehouse" value="">';
-		$stockObject = $line->getBestWarehouse($product, $line->qty + (!empty($stockUsedForProduct[$line->fk_product]) ? $stockUsedForProduct[$line->fk_product] : 0), $object->fk_entrepot);
+		$stockObject = $line->getBestWarehouse($product, $line->qty + (!empty($stockUsedForProduct[$line->fk_product]) ? $stockUsedForProduct[$line->fk_product] : 0), $line->fk_entrepot ?: $object->fk_entrepot);
 	}
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
@@ -241,7 +241,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
 			} elseif (isset($stockObject)) {
-				$batch = $line->getBestLot($stockObject, $line->qty + $stockUsedForBatch[$line->fk_productbatch], $object->usedLotBatch);
+				$batch = $line->getBestLot($stockObject, $line->qty + (!empty($stockUsedForBatch[$line->fk_productbatch]) ? $stockUsedForBatch[$line->fk_productbatch] : 0), $object->usedLotBatch);
 				$stockObject = null; // to not use stock object anymore for stock used calculation as we will use batch object which is more precise
 				$selectedBatch = $batch ? $batch->id : 0;
 				if ($batch) {
@@ -249,8 +249,8 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 						$stockUsedForProduct[$line->fk_product] += $batch->qty;
 						$stockUsedForBatch[$batch->id] += $batch->qty;
 					} else {
-						$stockUsedForProduct[$line->fk_product] += $line->qty;
-						$stockUsedForBatch[$batch->id] += $line->qty;
+						!empty($stockUsedForProduct[$line->fk_product]) ? $stockUsedForProduct[$line->fk_product] += $line->qty : $stockUsedForProduct[$line->fk_product] = $line->qty;
+						!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $line->qty : $stockUsedForBatch[$batch->id] = $line->qty;
 					}
 					if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
 						$object->usedLotBatch[$batch->id] = $batch->id;
