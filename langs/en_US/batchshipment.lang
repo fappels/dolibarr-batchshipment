@@ -67,6 +67,7 @@ CheckLoad = Check
 Picked = Picked
 Loaded = Loaded
 Checked = Checked
+Grouped = Warehouse and lot/serial are set
 QtyTake = Take
 CantCloseOrderWhenOnProcess = Can't set order as delivered when there is a line still on process in Picking list.
 UserPick = Picking User
@@ -90,6 +91,7 @@ NotEnoughStockForThisLine = Not enough stock for %s.
 InvalidMasterShipment = Invalid Picking list.
 NoQtyToAddForThisLine = No quantities to add for %s, probaly already in a shipment.
 AlreadyAddedToMasterShipment = Product %s from %s already in picking list.
+NotAllLinesStatusGrouped = You need to check all lines to be able to validate.
 
 #
 # Sample widget

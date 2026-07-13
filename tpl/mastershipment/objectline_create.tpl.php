@@ -162,6 +162,16 @@ jQuery(document).ready(function() {
 		$("input[name=changedwarehouse]").val(entrepotid);
 		$("form[name=draft]").submit();
 	});
+	$(".change-batch").change(function() {
+
+		var batchid = $(this).val();
+		var line = $(this).closest('tr').data('id');
+		console.log("We have changed the batch " + batchid + " on line " + line + " - Reload page");
+		// reload page
+		$("input[name=changedline]").val(line);
+		$("input[name=changedbatch]").val(batchid);
+		$("form[name=draft]").submit();
+	});
 });
 </script>
 

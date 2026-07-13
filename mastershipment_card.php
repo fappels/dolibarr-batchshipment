@@ -224,6 +224,7 @@ if (empty($reshook)) {
 		$qtysToGroup = GETPOST('qty_group', 'array');
 		$warehouses = GETPOST('fk_entrepot', 'array');
 		$changedWarehouse = GETPOST('changedwarehouse', 'int');
+		$changedBatch = GETPOST('changedbatch', 'int');
 		$changedLine = GETPOST('changedline', 'int');
 		if (GETPOST('group')) {
 			$result = $object->group($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
@@ -233,26 +234,36 @@ if (empty($reshook)) {
 		} elseif (GETPOST('merge')) {
 			$result = $object->mergeLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} else {
-			if ($changedLine > 0 && $changedWarehouse > 0) {
-				$line = new MasterShipmentLine($db);
-				$result = $line->fetch($changedLine);
-				if ($result > 0) {
-					$line->fk_entrepot = $changedWarehouse;
-					if (!empty($line->fk_productbatch)) {
-						$product = new Product($db);
-						$product->fetch($line->fk_product);
-						$stockObject = $line->getBestWarehouse($product, $line->qty, $changedWarehouse);
-						if ($stockObject) {
-							$object->getLinesArray(); // to get used lot number
-							$batch = $line->getBestLot($stockObject, $line->qty, $object->usedLotBatch);
-							if (!empty($batch->id)) {
-								$line->fk_productbatch = $batch->id;
+			if ($changedLine > 0) {
+				if ($changedWarehouse > 0) {
+					$line = new MasterShipmentLine($db);
+					$result = $line->fetch($changedLine);
+					if ($result > 0) {
+						$line->fk_entrepot = $changedWarehouse;
+						if (!empty($line->fk_productbatch)) {
+							$product = new Product($db);
+							$product->fetch($line->fk_product);
+							$stockObject = $line->getBestWarehouse($product, $line->qty, $changedWarehouse);
+							if ($stockObject) {
+								$object->getLinesArray(); // to get used lot number
+								$batch = $line->getBestLot($stockObject, $line->qty, $object->usedLotBatch);
+								if (!empty($batch->id)) {
+									$line->fk_productbatch = $batch->id;
+								}
+							} else {
+								$line->fk_productbatch = -1;
 							}
-						} else {
-							$line->fk_productbatch = -1;
 						}
+						$result = $line->update($user);
 					}
-					$result = $line->update($user);
+				}
+				if ($changedBatch > 0) {
+					$line = new MasterShipmentLine($db);
+					$result = $line->fetch($changedLine);
+					if ($result > 0) {
+						$line->fk_productbatch = $changedBatch;
+						$result = $line->update($user);
+					}
 				}
 			}
 		}
@@ -360,7 +371,15 @@ if (empty($reshook)) {
 
 		$mastershipmentLine = new MasterShipmentLine($db);
 		$mastershipmentLine->fetch($mastershipment_line_id);
-		$mastershipmentLine->qty_pick = 0;
+		if ($mastershipmentLine->status == MasterShipmentLine::STATUS_GROUPED) {
+			$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
+			$mastershipmentLine->fk_productbatch = null;
+			$mastershipmentLine->fk_entrepot = null;
+		} elseif ($mastershipmentLine->status == MasterShipmentLine::STATUS_PICKED) {
+			$mastershipmentLine->status = MasterShipmentLine::STATUS_GROUPED;
+			$mastershipmentLine->qty_pick = 0;
+		}
+
 		$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
 		$mastershipmentLine->update($user);
 		$action = '';
@@ -916,6 +935,13 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			$allowValidatePicking = $permissiontoadd;
 			$allowValidateLoading = $permissiontoadd;
 			foreach ($object->lines as $line) {
+				if ($line->status != MasterShipmentLine::STATUS_GROUPED) {
+					$allowValidate = false;
+					$disableValidateWarning =  $langs->trans('NotAllLinesStatusGrouped');
+					break;
+				}
+			}
+			foreach ($object->lines as $line) {
 				if ($line->status != MasterShipmentLine::STATUS_PICKED) {
 					$allowValidatePicking = false;
 					$rightforbacktovalidate = false;
@@ -981,7 +1007,9 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			// Validate
 			if ($object->status == $object::STATUS_DRAFT) {
 				if (empty($object->table_element_line) || (is_array($object->lines) && count($object->lines) > 0)) {
-					print dolGetButtonAction('', $langs->trans('Validate'), 'default', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=confirm_validate&confirm=yes&token='.newToken(), '', $permissiontoadd);
+					$buttonParams = array();
+					if (!$allowValidate) $buttonParams['attr']['title'] = $disableValidateWarning;
+					print dolGetButtonAction('', $langs->trans('Validate'), 'default', $_SERVER['PHP_SELF'].'?id='.$object->id.'&action=confirm_validate&confirm=yes&token='.newToken(), '', $allowValidate, $buttonParams);
 				} else {
 					$langs->load("errors");
 					print dolGetButtonAction($langs->trans("ErrorAddAtLeastOneLineFirst"), $langs->trans("Validate"), 'default', '#', '', 0);

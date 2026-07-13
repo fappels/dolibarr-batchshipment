@@ -18,8 +18,8 @@ BatchShipmentSetupPage = Page de configuration des expéditions groupées
 NewSection=Nouvelle rubrique
 BATCHSHIPMENT_TWO_STAGE_PICKING = Prélèvement en deux étapes
 BATCHSHIPMENT_TWO_STAGE_PICKINGTooltip = Deux modes de prélèvement sont disponibles :<br>- Mode une étape : les articles sont immédiatement triés par commande.<br>- Mode deux étapes : on regroupe d'abord tous les articles, puis on les répartit ensuite par commande.
-BATCHSHIPMENT_MYPARAM2=My param 2
-BATCHSHIPMENT_MYPARAM2Tooltip=My param 2 tooltip
+BATCHSHIPMENT_MYPARAM2=Mon paramètre 2
+BATCHSHIPMENT_MYPARAM2Tooltip=Infobulle du paramètre 2
 MasterShipmentDocumentModules = Modèles de documents de liste de préparation
 MasterShipmentNumberingModules = Modèles de numérotation des listes de préparation 
 
@@ -66,6 +66,7 @@ CheckLoad = Vérifier
 Picked = Préparé
 Loaded = Chargé
 Checked = Vérifié
+Grouped = Entrepôt et lot/série définis
 QtyTake = Prise
 CantCloseOrderWhenOnProcess = Impossible de marquer la commande comme livrée tant qu'une ligne est encore en cours de traitement dans la liste de préparation.
 UserPick = Utilisateur chargé de la préparation
@@ -89,9 +90,10 @@ NotEnoughStockForThisLine = Pas assez de stock pour %s.
 InvalidMasterShipment = Erreur liste de préparation.
 NoQtyToAddForThisLine = Aucune quantité à ajouter pour %s, probablement déjà dans une expédition.
 AlreadyAddedToMasterShipment = Produit %s de %s déjà dans liste de préparation.
+NotAllLinesStatusGrouped = Vous devez cocher toutes les lignes pour pouvoir valider.
 
 #
 # Sample widget
 #
-MyWidget = My widget
-MyWidgetDescription = My widget description
+MyWidget = Mon widget
+MyWidgetDescription = Description de mon widget

@@ -1465,7 +1465,7 @@ class MasterShipment extends CommonObject
 				if ($result > 0) {
 					$result = $this->updateLine($user,
 						$line->id,
-						MasterShipmentLine::STATUS_DRAFT,
+						MasterShipmentLine::STATUS_GROUPED,
 						$line->fk_product,
 						price2num($qtysToGroup[$key]),
 						0,
@@ -2350,7 +2350,7 @@ class MasterShipment extends CommonObject
 				if ($batch->qty < $line->qty) {
 					!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $batch->qty : $stockUsedForBatch[$batch->id] = $batch->qty;
 				} else {
-					$stockUsedForBatch[$batch->id] += $line->qty;
+					!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $line->qty : $stockUsedForBatch[$batch->id] = $line->qty;
 				}
 				if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
 					$this->usedLotBatch[$batch->id] = $batch->id;
@@ -2612,7 +2612,7 @@ class MasterShipmentLine extends CommonObjectLine
 		'fk_expedition_line' => array('type'=>'integer', 'label'=>'ShipmentLine', 'enabled'=>'1', 'notnull'=>-1, 'visible'=>-1),
 		'fk_shipmentpackage' => array('type'=>'integer:ShipmentPackage:shipmentpackage/class/shipmentpackage.class.php', 'label'=>'ShipmentPackage', 'enabled'=>'0', 'notnull'=>-1, 'visible'=>1),
 		'fk_shipmentpackage_line' => array('type'=>'integer', 'label'=>'ShipmentPackageLine', 'enabled'=>'0', 'notnull'=>-1, 'visible'=>-1),
-		'status' => array('type'=>'smallint', 'label'=>'Status', 'enabled'=>'1', 'position'=>200, 'notnull'=>1, 'visible'=>5, 'index'=>1, 'default'=>0, 'arrayofkeyval'=>array('0'=>'Draft', '1'=>'Picked', '2'=>'Loaded', '3'=>'Checked'),),
+		'status' => array('type'=>'smallint', 'label'=>'Status', 'enabled'=>'1', 'position'=>200, 'notnull'=>1, 'visible'=>5, 'index'=>1, 'default'=>0, 'arrayofkeyval'=>array('0'=>'Draft', '1' => 'Set', '2'=>'Picked', '3'=>'Loaded', '4'=>'Checked'),),
 		'comment' => array('type'=>'varchar(255)', 'label'=>'Comment', 'enabled'=>'1', 'notnull'=>-1, 'visible'=>1),
 		'position' => array('type'=>'integer', 'label'=>'Rang', 'enabled'=>'1', 'notnull'=>-1, 'visible'=>0)
 	);
@@ -2728,9 +2728,10 @@ class MasterShipmentLine extends CommonObjectLine
 	public $ismultientitymanaged = 0;
 
 	const STATUS_DRAFT = 0;
-	const STATUS_PICKED = 1;
-	const STATUS_LOADED = 2;
-	const STATUS_CHECKED = 3;
+	const STATUS_GROUPED = 1;
+	const STATUS_PICKED = 2;
+	const STATUS_LOADED = 3;
+	const STATUS_CHECKED = 4;
 
 	/**
 	 * Constructor
@@ -2751,7 +2752,12 @@ class MasterShipmentLine extends CommonObjectLine
 	 */
 	public function create(User $user, $notrigger = false)
 	{
-		return $this->createCommon($user, $notrigger);
+		$result = $this->createCommon($user, $notrigger);
+		if ($result > 0 && $this->fk_entrepot > 0) {
+			// check if we need to set 'grouped' status
+			$this->update($user, $notrigger);
+		}
+		return $result;
 	}
 
 	/**
@@ -2853,6 +2859,17 @@ class MasterShipmentLine extends CommonObjectLine
 	 */
 	public function update(User $user, $notrigger = false)
 	{
+		if ($this->status == self::STATUS_DRAFT && $this->fk_product > 0 && $this->fk_entrepot > 0) {
+			$product = new Product($this->db);
+			$product->fetch($this->fk_product);
+			if (!empty($product) && $product->status_batch > 0) {
+				if ($this->fk_productbatch > 0) {
+					$this->status = self::STATUS_GROUPED;
+				}
+			} else {
+				$this->status = self::STATUS_GROUPED;
+			}
+		}
 		return $this->updateCommon($user, $notrigger);
 	}
 
@@ -3110,10 +3127,12 @@ class MasterShipmentLine extends CommonObjectLine
 		if (empty($this->labelStatus) || empty($this->labelStatusShort)) {
 			global $langs;
 			$this->labelStatus[self::STATUS_DRAFT] = $langs->transnoentitiesnoconv('Draft');
+			$this->labelStatus[self::STATUS_GROUPED] = $langs->transnoentitiesnoconv('Grouped');
 			$this->labelStatus[self::STATUS_PICKED] = $langs->transnoentitiesnoconv('Picked');
 			$this->labelStatus[self::STATUS_LOADED] = $langs->transnoentitiesnoconv('Loaded');
 			$this->labelStatus[self::STATUS_CHECKED] = $langs->transnoentitiesnoconv('Checked');
 			$this->labelStatusShort[self::STATUS_DRAFT] = $langs->transnoentitiesnoconv('Draft');
+			$this->labelStatusShort[self::STATUS_GROUPED] = $langs->transnoentitiesnoconv('Grouped');
 			$this->labelStatusShort[self::STATUS_PICKED] = $langs->transnoentitiesnoconv('Picked');
 			$this->labelStatusShort[self::STATUS_LOADED] = $langs->transnoentitiesnoconv('Loaded');
 			$this->labelStatusShort[self::STATUS_CHECKED] = $langs->transnoentitiesnoconv('Checked');

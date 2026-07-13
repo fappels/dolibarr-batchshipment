@@ -237,7 +237,8 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	if (!empty($conf->productbatch->enabled)) {
 		$coldisplay++;
 		print '<td class="linecoldescription right">';
-		if ($line->fk_product > 0 && $product->hasbatch() && $object->status == MasterShipment::STATUS_DRAFT) {
+		if ($line->fk_product > 0 && $product->hasbatch() && $line->status == MasterShipmentLine::STATUS_DRAFT) {
+			print '<input type="hidden" name="changedbatch" value="">';
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
 			} elseif (isset($stockObject)) {
@@ -265,7 +266,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 				$showEmptyBatch = 0;
 			}
 
-			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', $showEmptyBatch, 0, $line->fk_product, $line->fk_entrepot);
+			print $formproduct->selectLotStock((isset($lotLoaded[$i+1]) ? $lotLoaded[$i+1] : $selectedBatch), 'fk_productbatch['.($i + 1).']', '', $showEmptyBatch, 0, $line->fk_product, $line->fk_entrepot, array(), '', 0, array(), 'minwidth200 change-batch');
 		} else if (empty($line->fk_productbatch)) {
 			print $langs->trans('NA');
 		} else {
@@ -305,7 +306,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 
 	$disabled = 0;
-	if ($line->status == MasterShipmentLine::STATUS_PICKED) {
+	if (($line->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $line->status == MasterShipmentLine::STATUS_PICKED) {
 		$disabled = 1;
 	}
 	if ($object->status >= MasterShipment::STATUS_VALIDATED) {
@@ -318,7 +319,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	// tick to pick or create shipments
 	$coldisplay++;
 	print '<td class="linecolcheck center">';
-	if (isset($linesChecked[$i+1]) || $line->status == MasterShipmentLine::STATUS_PICKED) {
+	if (isset($linesChecked[$i+1]) || ($line->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $line->status == MasterShipmentLine::STATUS_PICKED) {
 		print '<input type="checkbox" class="linecheckbox" name="line_checkbox['.($i + 1).']" value="'.$line->id.'" checked ' . ($disabled ? 'disabled' : '') . '>';
 	} else {
 		print '<input type="checkbox" class="linecheckbox" name="line_checkbox['.($i + 1).']" value="'.$line->id.'" ' . ($disabled ? 'disabled' : '') . '>';
@@ -326,7 +327,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay++;
 	print '<td>';
-	if ($line->status == MasterShipmentLine::STATUS_PICKED) {
+	if (($line->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $line->status == MasterShipmentLine::STATUS_PICKED) {
 		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=undoline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
 	} elseif ($line->status == MasterShipmentLine::STATUS_DRAFT) {
 		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=deleteline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_delete('Delete', 0, 'style="max-width: 20px"') .'</a>';
