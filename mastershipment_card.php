@@ -397,6 +397,30 @@ if (empty($reshook)) {
 		$action = '';
 	}
 
+	if ($action == 'confirm_undoall' && $confirm == 'yes') {
+		foreach ($object->lines as $mastershipmentLine) {
+			if ($object->status >= MasterShipment::STATUS_PICKED) {
+				if ($mastershipmentLine->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
+					$mastershipmentLine->status = MasterShipmentLine::STATUS_LOADED;
+					$mastershipmentLine->update($user);
+				}
+			} else {
+				if (($mastershipmentLine->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $mastershipmentLine->status == MasterShipmentLine::STATUS_PICKED) {
+					if ($mastershipmentLine->status == MasterShipmentLine::STATUS_GROUPED) {
+						$mastershipmentLine->fk_productbatch = null;
+						$mastershipmentLine->fk_entrepot = null;
+					} elseif ($mastershipmentLine->status == MasterShipmentLine::STATUS_PICKED) {
+						$mastershipmentLine->qty_pick = 0;
+					}
+					$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
+					$mastershipmentLine->update($user);
+				}
+			}
+		}
+		$object->fetch($id);
+		$action = '';
+	}
+
 	if ($action == 'confirm_undo_load') {
 		$result = $object->undoLoad($user);
 		if ($result < 0) {
@@ -721,6 +745,11 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 	// Confirmation of undo load, will delete all shipmentpackage and shipment made
 	if ($action == 'confirm_load' && GETPOST('undo_load')) {
 		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('UndoAllLoad'), $langs->trans('ConfirmUndoAllLoading'), 'confirm_undo_load', '', 0, 1);
+	}
+
+	// Confirmation of undo all lines
+	if ($action == 'undoall') {
+		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('UndoAll'), $langs->trans('ConfirmUndoAll'), 'confirm_undoall', '', 0, 1);
 	}
 
 	// Call Hook formConfirm

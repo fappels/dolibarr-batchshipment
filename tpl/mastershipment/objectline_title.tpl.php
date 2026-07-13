@@ -69,7 +69,25 @@ print '<input type="checkbox" class="linecheckboxtoggle" '. $disabled .' />';
 print '<script>$(document).ready(function() {$(".linecheckboxtoggle").click(function() {var checkBoxes = $(".linecheckbox");checkBoxes.prop("checked", this.checked);})});</script>';
 print '</td>';
 
-print '<td></td>';
+$showUndoAll = false;
+foreach ($object->lines as $line) {
+	if ($object->status >= MasterShipment::STATUS_PICKED) {
+		if ($line->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
+			$showUndoAll = true;
+			break;
+		}
+	} else {
+		if (($line->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $line->status == MasterShipmentLine::STATUS_PICKED) {
+			$showUndoAll = true;
+			break;
+		}
+	}
+}
+print '<td>';
+if ($showUndoAll) {
+	print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=undoall&amp;token=' . newToken() . '">'. img_left($langs->trans('UndoAll'), 0, 'style="max-width: 20px"') .'</a>';
+}
+print '</td>';
 
 print "</tr>\n";
 print "</thead>\n";
