@@ -152,11 +152,22 @@ print '</tr>';
 
 /* JQuery stuff */
 jQuery(document).ready(function() {
+	// scroll back to the line whose select field triggered the page reload
+	var scrollToLineId = sessionStorage.getItem('mastershipment_scrolltoline');
+	if (scrollToLineId) {
+		sessionStorage.removeItem('mastershipment_scrolltoline');
+		var $scrollToRow = $('tr[data-id="' + scrollToLineId + '"]');
+		if ($scrollToRow.length) {
+			$('html, body').animate({ scrollTop: $scrollToRow.offset().top - 100 }, 300);
+		}
+	}
+
 	$(".change-warehouse").change(function() {
 		var entrepotid = $(this).val();
 		var line = $(this).closest('tr').data('id');
 		console.log("We have changed the warehouse " + entrepotid + " on line " + line + " - Reload page");
 		// reload page
+		sessionStorage.setItem('mastershipment_scrolltoline', line);
 		$("input[name=changedline]").val(line);
 		$("input[name=changedwarehouse]").val(entrepotid);
 		if (<?php echo ($object->status == MasterShipment::STATUS_DRAFT ? 'true' : 'false'); ?>) {
@@ -172,6 +183,7 @@ jQuery(document).ready(function() {
 		var line = $(this).closest('tr').data('id');
 		console.log("We have changed the batch " + batchid + " on line " + line + " - Reload page");
 		// reload page
+		sessionStorage.setItem('mastershipment_scrolltoline', line);
 		$("input[name=changedline]").val(line);
 		$("input[name=changedwarehouse]").val(entrepotid);
 		$("input[name=changedbatch]").val(batchid);
