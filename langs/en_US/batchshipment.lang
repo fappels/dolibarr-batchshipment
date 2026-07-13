@@ -18,8 +18,8 @@ BatchShipmentSetupPage = Batch Shipment setup page
 NewSection=New section
 BATCHSHIPMENT_TWO_STAGE_PICKING = Two-stage picking
 BATCHSHIPMENT_TWO_STAGE_PICKINGTooltip = Two picking modes are available:<br>- One-stage mode: items are sorted by order immediately.<br>- Two-stage mode: all items are first grouped together, then distributed by order afterwards.
-BATCHSHIPMENT_MYPARAM2=My param 2
-BATCHSHIPMENT_MYPARAM2Tooltip=My param 2 tooltip
+BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPED=Allow choose warehouse and lot/serial while picking
+BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPEDTooltip=You can still select the warehouse from where to pick and which lot/serail to pick in while taking the products in the warehouse, if disabled you need to define them before picking.
 MasterShipmentDocumentModules = Picking list document models
 MasterShipmentNumberingModules = Picking list numbering models
 

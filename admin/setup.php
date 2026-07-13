@@ -99,7 +99,8 @@ if (!$user->admin) {
 $arrayofparameters = array(
 	//'MASTERSHIPMENT_DEFAULT_PICKING_LOCATION'=>array('type'=>'entrepot', 'enabled'=>1),
 	//'MASTERSHIPMENT_DEFAULT_LOADING_LOCATION'=>array('type'=>'entrepot', 'enabled'=>1),
-	'BATCHSHIPMENT_TWO_STAGE_PICKING'=>array('type'=>'yesno', 'enabled'=>1)
+	'BATCHSHIPMENT_TWO_STAGE_PICKING'=>array('type'=>'yesno', 'enabled'=>1),
+	'BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPED'=>array('type'=>'yesno', 'enabled'=>1),
 );
 
 $dirmodels = array_merge(array('/'), (array) $conf->modules_parts['models']);

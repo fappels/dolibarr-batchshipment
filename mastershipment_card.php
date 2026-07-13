@@ -216,16 +216,51 @@ if (empty($reshook)) {
 
 	// Action to move up and down lines of object
 	//include DOL_DOCUMENT_ROOT.'/core/actions_lineupdown.inc.php';
-
+	if (($action == 'confirm_group' || ($action == 'confirm_pick') && getDolGlobalInt('BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPED')) && $confirm == 'yes' && $permissiontoadd) {
+		// we change warehgouse and or lot/serial number
+		$changedWarehouse = GETPOST('changedwarehouse', 'int');
+		$changedBatch = GETPOST('changedbatch', 'int');
+		$changedLine = GETPOST('changedline', 'int');
+		if ($changedLine > 0) {
+			if ($changedWarehouse > 0) {
+				$line = new MasterShipmentLine($db);
+				$result = $line->fetch($changedLine);
+				if ($result > 0) {
+					$line->fk_entrepot = $changedWarehouse;
+					$line->update($user);
+					if (empty($changedBatch)) {
+						$product = new Product($db);
+						$product->fetch($line->fk_product);
+						$stockObject = $line->getBestWarehouse($product, $line->qty, $changedWarehouse);
+						if ($stockObject) {
+							$object->getLinesArray(); // to get used lot number
+							$batch = $line->getBestLot($stockObject, $line->qty, $object->usedLotBatch);
+							if (!empty($batch->id)) {
+								$line->fk_productbatch = $batch->id;
+							}
+						} else {
+							$line->fk_productbatch = -1;
+						}
+					}
+				}
+			}
+			if ($changedBatch > 0) {
+				$line = new MasterShipmentLine($db);
+				$result = $line->fetch($changedLine);
+				if ($result > 0) {
+					$line->fk_productbatch = $changedBatch;
+					$line->update($user);
+				}
+			}
+		}
+	}
 	if ($action == 'confirm_group' && $confirm == 'yes' && $permissiontoadd) {
 		$result = 0;
 		$linesChecked = GETPOST('line_checkbox', 'array');
 		$productBatchToGroup = GETPOST('fk_productbatch', 'array');
 		$qtysToGroup = GETPOST('qty_group', 'array');
 		$warehouses = GETPOST('fk_entrepot', 'array');
-		$changedWarehouse = GETPOST('changedwarehouse', 'int');
-		$changedBatch = GETPOST('changedbatch', 'int');
-		$changedLine = GETPOST('changedline', 'int');
+
 		if (GETPOST('group')) {
 			$result = $object->group($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} elseif (GETPOST('split')) {
@@ -233,39 +268,6 @@ if (empty($reshook)) {
 			$result = $object->splitLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
 		} elseif (GETPOST('merge')) {
 			$result = $object->mergeLines($user, $linesChecked, $qtysToGroup, $warehouses, $productBatchToGroup);
-		} else {
-			if ($changedLine > 0) {
-				if ($changedWarehouse > 0) {
-					$line = new MasterShipmentLine($db);
-					$result = $line->fetch($changedLine);
-					if ($result > 0) {
-						$line->fk_entrepot = $changedWarehouse;
-						if (!empty($line->fk_productbatch)) {
-							$product = new Product($db);
-							$product->fetch($line->fk_product);
-							$stockObject = $line->getBestWarehouse($product, $line->qty, $changedWarehouse);
-							if ($stockObject) {
-								$object->getLinesArray(); // to get used lot number
-								$batch = $line->getBestLot($stockObject, $line->qty, $object->usedLotBatch);
-								if (!empty($batch->id)) {
-									$line->fk_productbatch = $batch->id;
-								}
-							} else {
-								$line->fk_productbatch = -1;
-							}
-						}
-						$result = $line->update($user);
-					}
-				}
-				if ($changedBatch > 0) {
-					$line = new MasterShipmentLine($db);
-					$result = $line->fetch($changedLine);
-					if ($result > 0) {
-						$line->fk_productbatch = $changedBatch;
-						$result = $line->update($user);
-					}
-				}
-			}
 		}
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
@@ -922,7 +924,7 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			$disableValidatePickingWarning = '';
 			$rightfordraft = $permissiontoadd;
 			foreach ($object->lines as $line) {
-				if ($line->status != MasterShipmentLine::STATUS_DRAFT) {
+				if ($line->status != MasterShipmentLine::STATUS_GROUPED && $line->status != MasterShipmentLine::STATUS_DRAFT) {
 					$rightfordraft = false;
 					$disableBackToDraftWarning = $langs->trans('NotAllLinesStatusDraft');
 					break;
@@ -934,11 +936,13 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			$allowValidate = $permissiontoadd;
 			$allowValidatePicking = $permissiontoadd;
 			$allowValidateLoading = $permissiontoadd;
-			foreach ($object->lines as $line) {
-				if ($line->status != MasterShipmentLine::STATUS_GROUPED) {
-					$allowValidate = false;
-					$disableValidateWarning =  $langs->trans('NotAllLinesStatusGrouped');
-					break;
+			if (!getDolGlobalInt('BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPED')) {
+				foreach ($object->lines as $line) {
+					if ($line->status != MasterShipmentLine::STATUS_GROUPED) {
+						$allowValidate = false;
+						$disableValidateWarning =  $langs->trans('NotAllLinesStatusGrouped');
+						break;
+					}
 				}
 			}
 			foreach ($object->lines as $line) {

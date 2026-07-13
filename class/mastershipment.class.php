@@ -549,16 +549,7 @@ class MasterShipment extends CommonObject
 			$line->qty_pick = $qty_pick;
 			$line->fk_commande = $fk_commande;
 			$line->status = $status;
-			if (!empty($fk_productbatch)) {
-				dol_include_once('/product/stock/class/productbatch.class.php');
-				dol_include_once('/product/stock/class/productlot.class.php');
-				$productBatch = new Productbatch($this->db);
-				$productBatch->fetch($fk_productbatch);
-				$line->fk_productbatch = $productBatch->id;
-				$productLot = new Productlot($this->db);
-				$productLot->fetch(null, $line->fk_product, $productBatch->batch);
-				$line->fk_productlot = $productLot->id;
-			}
+			$line->fk_productbatch = $fk_productbatch;
 			if (isset($qty_load)) $line->qty_load = $qty_load;
 			if (isset($comment)) $line->comment = $comment;
 
@@ -2864,6 +2855,14 @@ class MasterShipmentLine extends CommonObjectLine
 			$product->fetch($this->fk_product);
 			if (!empty($product) && $product->status_batch > 0) {
 				if ($this->fk_productbatch > 0) {
+					dol_include_once('/product/stock/class/productbatch.class.php');
+					dol_include_once('/product/stock/class/productlot.class.php');
+					$productBatch = new Productbatch($this->db);
+					$productBatch->fetch($this->fk_productbatch);
+					$this->fk_productbatch = $productBatch->id;
+					$productLot = new Productlot($this->db);
+					$productLot->fetch(null, $this->fk_product, $productBatch->batch);
+					$this->fk_productlot = $productLot->id;
 					$this->status = self::STATUS_GROUPED;
 				}
 			} else {
@@ -3042,7 +3041,7 @@ class MasterShipmentLine extends CommonObjectLine
 							return $product->stock_warehouse[$childWarehouse];
 						}
 					}
-				} else {
+				} elseif (isset($product->stock_warehouse[$fk_entrepot])) {
 					$product->stock_warehouse[$fk_entrepot]->fk_entrepot = $fk_entrepot;
 					return $product->stock_warehouse[$fk_entrepot];
 				}

@@ -18,10 +18,10 @@ BatchShipmentSetupPage = Page de configuration des expéditions groupées
 NewSection=Nouvelle rubrique
 BATCHSHIPMENT_TWO_STAGE_PICKING = Prélèvement en deux étapes
 BATCHSHIPMENT_TWO_STAGE_PICKINGTooltip = Deux modes de prélèvement sont disponibles :<br>- Mode une étape : les articles sont immédiatement triés par commande.<br>- Mode deux étapes : on regroupe d'abord tous les articles, puis on les répartit ensuite par commande.
-BATCHSHIPMENT_MYPARAM2=Mon paramètre 2
-BATCHSHIPMENT_MYPARAM2Tooltip=Infobulle du paramètre 2
+BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPED=Autoriser le choix de l'entrepôt et du lot/série lors du prélèvement
+BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPEDTooltip=Vous pouvez toujours sélectionner l'entrepôt d'où prélever et le lot/série à prélever lors de la prise des produits en entrepôt. Si désactivé, vous devez les définir avant le prélèvement.
 MasterShipmentDocumentModules = Modèles de documents de liste de préparation
-MasterShipmentNumberingModules = Modèles de numérotation des listes de préparation 
+MasterShipmentNumberingModules = Modèles de numérotation des listes de préparation
 
 #
 # About page

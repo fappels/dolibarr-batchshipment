@@ -59,6 +59,7 @@ $disablemove = 1; // TODO debug line move
 // add html5 elements
 $domData  = ' data-element="'.$line->element.'"';
 $domData .= ' data-id="'.$line->id.'"';
+$domData .= ' data-warehouse_id="'.$line->fk_entrepot.'"';
 
 // Get order line to display some order line info like rang and delivery date
 $objectline = new MasterShipmentLine($object->db);
@@ -293,7 +294,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '<td class="linecol">';
 
 	if ($line->fk_product > 0) {
-		if ($line->status == MasterShipmentLine::STATUS_DRAFT && $object->status == MasterShipment::STATUS_DRAFT) {
+		if ($line->status == MasterShipmentLine::STATUS_DRAFT) {
 			print $formproduct->selectWarehouses($line->fk_entrepot, 'fk_entrepot['.($i + 1).']', '', 0, 0, $line->fk_product, '', 1, 0, array(), 'minwidth200 change-warehouse');
 		} else {
 			print $objectline->showOutputField($objectline->fields['fk_entrepot'], 'fk_entrepot', $line->fk_entrepot) . (!empty($stockObject->real) ? ' (stock:' . $stockObject->real . ')' : '');

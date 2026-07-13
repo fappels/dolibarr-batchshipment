@@ -153,24 +153,33 @@ print '</tr>';
 /* JQuery stuff */
 jQuery(document).ready(function() {
 	$(".change-warehouse").change(function() {
-
 		var entrepotid = $(this).val();
 		var line = $(this).closest('tr').data('id');
 		console.log("We have changed the warehouse " + entrepotid + " on line " + line + " - Reload page");
 		// reload page
 		$("input[name=changedline]").val(line);
 		$("input[name=changedwarehouse]").val(entrepotid);
-		$("form[name=draft]").submit();
+		if (<?php echo ($object->status == MasterShipment::STATUS_DRAFT ? 'true' : 'false'); ?>) {
+			$("form[name=draft]").submit();
+		} else {
+			$("form[name=pick]").submit();
+		}
+
 	});
 	$(".change-batch").change(function() {
-
 		var batchid = $(this).val();
+		var entrepotid = $(this).closest('tr').data('warehouse_id');
 		var line = $(this).closest('tr').data('id');
 		console.log("We have changed the batch " + batchid + " on line " + line + " - Reload page");
 		// reload page
 		$("input[name=changedline]").val(line);
+		$("input[name=changedwarehouse]").val(entrepotid);
 		$("input[name=changedbatch]").val(batchid);
-		$("form[name=draft]").submit();
+		if (<?php echo ($object->status == MasterShipment::STATUS_DRAFT ? 'true' : 'false'); ?>) {
+			$("form[name=draft]").submit();
+		} else {
+			$("form[name=pick]").submit();
+		}
 	});
 });
 </script>
