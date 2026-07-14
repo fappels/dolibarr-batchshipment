@@ -50,6 +50,25 @@ if (empty($forceall)) $forceall = 0;
 
 $disablemove = 1; // TODO debug line move
 
+$stockObject = $stockObjects[$line->id];
+if ($line->fk_product > 0) {
+	// inputs to store changed warehouse
+	print '<input type="hidden" name="changedline" value="">';
+	print '<input type="hidden" name="changedwarehouse" value="">';
+}
+if (GETPOST('fk_entrepot', 'array')) {
+	$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
+	$line->fk_entrepot = $fk_entrepotArray[$i + 1];
+} elseif ($line->fk_entrepot) {
+	$line->fk_entrepot = $line->fk_entrepot;
+} elseif ($line->fk_product) {
+	$line->fk_entrepot = $stockObject ? $stockObject->fk_entrepot : 0;
+} elseif ($object->fk_entrepot) {
+	$line->fk_entrepot = $object->fk_entrepot;
+} else {
+	$line->fk_entrepot = 0;
+}
+
 // add html5 elements
 $domData  = ' data-element="'.$line->element.'"';
 $domData .= ' data-id="'.$line->id.'"';
@@ -178,24 +197,6 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
 } else {
-	$stockObject = $stockObjects[$line->id];
-	if ($line->fk_product > 0) {
-		// inputs to store changed warehouse
-		print '<input type="hidden" name="changedline" value="">';
-		print '<input type="hidden" name="changedwarehouse" value="">';
-	}
-	if (GETPOST('fk_entrepot', 'array')) {
-		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
-		$line->fk_entrepot = $fk_entrepotArray[$i + 1];
-	} elseif ($line->fk_entrepot) {
-		$line->fk_entrepot = $line->fk_entrepot;
-	} elseif ($line->fk_product) {
-		$line->fk_entrepot = $stockObject ? $stockObject->fk_entrepot : 0;
-	} elseif ($object->fk_entrepot) {
-		$line->fk_entrepot = $object->fk_entrepot;
-	} else {
-		$line->fk_entrepot = 0;
-	}
 	$coldisplay++;
 	print '<td class="linecol">';
 	print $objectline->showOutputField($objectline->fields['fk_commande'], 'fk_commande', $line->fk_commande);
