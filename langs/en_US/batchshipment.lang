@@ -94,6 +94,8 @@ InvalidMasterShipment = Invalid Picking list.
 NoQtyToAddForThisLine = No quantities to add for %s, probaly already in a shipment.
 AlreadyAddedToMasterShipment = Product %s from %s already in picking list.
 NotAllLinesStatusGrouped = You need to check all lines to be able to validate.
+AutofillQtyToPick = Fill quantity to pick with line quantity
+AutofillQtyToLoad = Fill quantity to load with picked quantity
 
 #
 # Sample widget

@@ -126,7 +126,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '<td class="linecolqty right">' . $line->qty;
 	print '</td>';
 	$coldisplay++;
-	print '<td class="linecolqty right">' . $line->qty_pick;
+	print '<td class="linecolqty right"><span class="expectedqty_load">' . $line->qty_pick . '</span>';
 	print '</td>';
 	if (getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
 		$coldisplay++;
@@ -149,7 +149,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		$disabled = 1;
 	}
 	print '<td class="linecolqty right">';
-	print '<input type="text" size="5" name="qty_load['.($i + 1).']" id="qty_load['.($i + 1).']" class="flat right" value="'.(isset($qtysLoaded[$i+1]) ? $qtysLoaded[$i+1] : $line->qty_load).'" ' . ($disabled ? 'disabled' : '') . '>';
+	print '<input type="text" size="5" name="qty_load['.($i + 1).']" id="qty_load['.($i + 1).']" class="flat right qty_load_input" value="'.(isset($qtysLoaded[$i+1]) ? $qtysLoaded[$i+1] : $line->qty_load).'" ' . ($disabled ? 'disabled' : '') . '>';
 	print '</td>';
 	$coldisplay++;
 	print '<td class="linecol">';
@@ -216,7 +216,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	if ($object->status == MasterShipment::STATUS_DRAFT) {
 		print '<input type="text" size="5" name="qty_group['.($i + 1).']" id="qty_group['.($i + 1).']" class="flat right" value="'.(isset($qtys[$i+1]) ? $qtys[$i+1] : $line->qty).'">';
 	} else {
-		print $line->qty;
+		print '<span class="expectedqty_pick">' . $line->qty . '</span>';
 	}
 	print '</td>';
 	if ($object->status >= MasterShipment::STATUS_VALIDATED) {
@@ -257,9 +257,12 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 
 	$coldisplay++;
 	$disabled = 0;
+	if ($line->status == MasterShipmentLine::STATUS_PICKED) {
+		$disabled = 1;
+	}
 	if ($object->status == MasterShipment::STATUS_VALIDATED) {
 		print '<td class="linecolqty right">';
-		print '<input type="text" size="5" name="qty_pick['.($i + 1).']" id="qty_pick['.($i + 1).']" class="flat right" value="'.(isset($qtysPicked[$i+1]) ? $qtysPicked[$i+1] : $line->qty_pick).'" ' . ($disabled ? 'disabled' : '') . '>';
+		print '<input type="text" size="5" name="qty_pick['.($i + 1).']" id="qty_pick['.($i + 1).']" class="flat right qty_pick_input" value="'.(isset($qtysPicked[$i+1]) ? $qtysPicked[$i+1] : $line->qty_pick).'" ' . ($disabled ? 'disabled' : '') . '>';
 		$coldisplay++;
 	}
 	print '<td class="linecol">';

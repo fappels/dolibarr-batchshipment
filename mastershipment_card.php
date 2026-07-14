@@ -899,6 +899,41 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 			include DOL_DOCUMENT_ROOT.'/core/tpl/ajaxrow.tpl.php';
 		}
 
+		// Link to autofill qty_pick or qty_load fields with the line quantity
+		if (!empty($conf->use_javascript_ajax) && $permissiontoadd) {
+			if ($object->status == MasterShipment::STATUS_VALIDATED) {
+				print '<center>';
+				print '<a id="fillqtypick" class="marginrightonly paddingright marginleftonly paddingleft" href="#">'.img_picto('', 'autofill', 'class="paddingrightonly"').$langs->trans('AutofillQtyToPick').'</a>';
+				print '<script>';
+				print '$(document).ready(function() {';
+				print '	$("#fillqtypick").on("click", function(){
+							$(".qty_pick_input").each(function(){
+								var expectedqty = $(this).closest("tr").find(".expectedqty_pick").text();
+								$(this).val(expectedqty);
+							});
+							return false;
+						});';
+				print '});';
+				print '</script>';
+				print '<br><br></center>';
+			} elseif ($object->status == MasterShipment::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
+				print '<center>';
+				print '<a id="fillqtyload" class="marginrightonly paddingright marginleftonly paddingleft" href="#">'.img_picto('', 'autofill', 'class="paddingrightonly"').$langs->trans('AutofillQtyToLoad').'</a>';
+				print '<script>';
+				print '$(document).ready(function() {';
+				print '	$("#fillqtyload").on("click", function(){
+							$(".qty_load_input").each(function(){
+								var expectedqty = $(this).closest("tr").find(".expectedqty_load").text();
+								$(this).val(expectedqty);
+							});
+							return false;
+						});';
+				print '});';
+				print '</script>';
+				print '<br><br></center>';
+			}
+		}
+
 		print '<div class="div-table-responsive-no-min">';
 		if (!empty($object->lines) || ($object->status == $object::STATUS_DRAFT && $permissiontoadd && $action != 'selectlines' && $action != 'editline')) {
 			print '<table id="tablelines" class="noborder noshadow" width="100%">';
