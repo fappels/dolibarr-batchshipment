@@ -78,7 +78,7 @@ print '<td class="linecolqty right"></td>';
 $colspan++;
 print '<td class="linecol"></td>';
 $colspan++;
-if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+if ($object->status == MasterShipment::STATUS_VALIDATED || $object->status == MasterShipment::STATUS_PICKED) {
 	print '<td class="linecol"></td>';
 	$colspan++;
 }
@@ -98,7 +98,7 @@ $colspan++;
 
 print '<td class="linecolcheckall center"></td>';
 $colspan++;
-if ($object->status >= MasterShipment::STATUS_VALIDATED) {
+if ($object->status == MasterShipment::STATUS_VALIDATED || $object->status == MasterShipment::STATUS_PICKED) {
 	print '<td class="linecol"></td>';
 	$colspan++;
 }

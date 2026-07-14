@@ -1805,7 +1805,7 @@ class MasterShipment extends CommonObject
 
 		$error = 0;
 		// Protection
-		if (($this->status != self::STATUS_SHIPMENTONPROCESS && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) || $this->status != self::STATUS_PICKED) {
+		if (($this->status != self::STATUS_SHIPMENTONPROCESS && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) || ($this->status != self::STATUS_PICKED && !getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING'))) {
 			return 0;
 		}
 
@@ -2339,7 +2339,7 @@ class MasterShipment extends CommonObject
 		$stockUsedForBatch = array();
 		foreach ($result as $line) {
 			$stockObject = null;
-			if ($line->fk_product > 0) {
+			if ($line->fk_product > 0 && ($this->status == MasterShipment::STATUS_DRAFT || ($this->status == MasterShipment::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_ALLOW_PICKING_NOT_GROUPED')))) {
 				$product = new Product($this->db);
 				$product->fetch($line->fk_product);
 				$alreadyUsed = !empty($stockUsedForWarehouse[$line->fk_product][$this->fk_entrepot]) ? $stockUsedForWarehouse[$line->fk_product][$this->fk_entrepot] : 0;

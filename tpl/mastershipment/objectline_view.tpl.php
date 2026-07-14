@@ -144,14 +144,16 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		}
 		print '</td>';
 	}
-	$disabled = 0;
-	if ($line->status == MasterShipmentLine::STATUS_LOADED || $line->status == MasterShipmentLine::STATUS_CHECKED) {
-		$disabled = 1;
+	if ($object->status == MasterShipment::STATUS_PICKED) {
+		$disabled = 0;
+		if ($line->status == MasterShipmentLine::STATUS_LOADED) {
+			$disabled = 1;
+		}
+		print '<td class="linecolqty right">';
+		print '<input type="text" size="5" name="qty_load['.($i + 1).']" id="qty_load['.($i + 1).']" class="flat right qty_load_input" value="'.(isset($qtysLoaded[$i+1]) ? $qtysLoaded[$i+1] : $line->qty_load).'" ' . ($disabled ? 'disabled' : '') . '>';
+		print '</td>';
+		$coldisplay++;
 	}
-	print '<td class="linecolqty right">';
-	print '<input type="text" size="5" name="qty_load['.($i + 1).']" id="qty_load['.($i + 1).']" class="flat right qty_load_input" value="'.(isset($qtysLoaded[$i+1]) ? $qtysLoaded[$i+1] : $line->qty_load).'" ' . ($disabled ? 'disabled' : '') . '>';
-	print '</td>';
-	$coldisplay++;
 	print '<td class="linecol">';
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
