@@ -971,7 +971,7 @@ class MasterShipment extends CommonObject
 		}
 
 		// when two stage picking is disabled, there is no separate loading step, so create shipments now
-		if (!$error && !$twoStagePicking) {
+		if (!$error && !getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
 			$result = $this->createShipments($user, $notrigger, 'qty_pick');
 			if ($result < 0) {
 				$error++;
