@@ -43,16 +43,10 @@ if (empty($object) || !is_object($object)) {
  * @var Translate $langs
  */
 
-global $forceall, $permissiontoadd, $formproduct, $stockUsedForProduct, $stockUsedForBatch;
+global $forceall, $permissiontoadd, $formproduct, $stockObjects;
 
 if (empty($dateSelector)) $dateSelector = 0;
 if (empty($forceall)) $forceall = 0;
-if (empty($stockUsedForProduct) && !empty($line->fk_product)) {
-	$stockUsedForProduct[$line->fk_product] = 0;
-}
-if (empty($stockUsedForBatch) && !empty($line->fk_productbatch)) {
-	$stockUsedForBatch[$line->fk_productbatch] = 0;
-}
 
 $disablemove = 1; // TODO debug line move
 
@@ -184,12 +178,11 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
 } else {
-	$stockObject = null;
+	$stockObject = $stockObjects[$line->id];
 	if ($line->fk_product > 0) {
 		// inputs to store changed warehouse
 		print '<input type="hidden" name="changedline" value="">';
 		print '<input type="hidden" name="changedwarehouse" value="">';
-		$stockObject = $line->getBestWarehouse($product, $line->qty + (!empty($stockUsedForProduct[$line->fk_product]) ? $stockUsedForProduct[$line->fk_product] : 0), $line->fk_entrepot ?: $object->fk_entrepot);
 	}
 	if (GETPOST('fk_entrepot', 'array')) {
 		$fk_entrepotArray = GETPOST('fk_entrepot', 'array');
@@ -242,22 +235,6 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 			print '<input type="hidden" name="changedbatch" value="">';
 			if ($line->fk_productbatch) {
 				$selectedBatch = $line->fk_productbatch;
-			} elseif (isset($stockObject)) {
-				$batch = $line->getBestLot($stockObject, $line->qty + (!empty($stockUsedForBatch[$line->fk_productbatch]) ? $stockUsedForBatch[$line->fk_productbatch] : 0), $object->usedLotBatch);
-				$stockObject = null; // to not use stock object anymore for stock used calculation as we will use batch object which is more precise
-				$selectedBatch = $batch ? $batch->id : 0;
-				if ($batch) {
-					if ($batch->qty < $line->qty) {
-						$stockUsedForProduct[$line->fk_product] += $batch->qty;
-						$stockUsedForBatch[$batch->id] += $batch->qty;
-					} else {
-						!empty($stockUsedForProduct[$line->fk_product]) ? $stockUsedForProduct[$line->fk_product] += $line->qty : $stockUsedForProduct[$line->fk_product] = $line->qty;
-						!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $line->qty : $stockUsedForBatch[$batch->id] = $line->qty;
-					}
-					if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
-						$object->usedLotBatch[$batch->id] = $batch->id;
-					}
-				}
 			} else {
 				$selectedBatch = 0;
 			}
@@ -276,14 +253,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		}
 		print '</td>';
 	}
-	if ($stockObject) {
-		if (!isset($stockUsedForProduct[$line->fk_product])) $stockUsedForProduct[$line->fk_product] = 0;
-		if ($stockObject->real < $line->qty) {
-			$stockUsedForProduct[$line->fk_product] += $stockObject->real;
-		} else {
-			$stockUsedForProduct[$line->fk_product] += $line->qty;
-		}
-	}
+
 	$coldisplay++;
 	$disabled = 0;
 	if ($object->status == MasterShipment::STATUS_VALIDATED) {

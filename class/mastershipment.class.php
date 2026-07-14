@@ -2328,23 +2328,56 @@ class MasterShipment extends CommonObject
 	 */
 	public function getLinesArray()
 	{
+		global $conf, $stockObjects;
 		$this->lines = array();
 
 		$objectline = new MasterShipmentLine($this->db);
 		$result = $objectline->fetchAll('ASC', 'position', 0, 0, '(fk_mastershipment:=:'.((int) $this->id).')');
+		$stockObjects = array();
+		$stockUsedForWarehouse = array(); // [fk_product][fk_entrepot] => qty already consumed by previous lines of this product in this warehouse
+		$warehousesToExclude = array(); // [fk_product] => array of warehouse ids fully consumed by previous lines of this product
 		$stockUsedForBatch = array();
 		foreach ($result as $line) {
-			if (!empty($line->fk_productbatch)) {
-				$batch = new ProductBatch($this->db);
-				$batch->fetch($line->fk_productbatch);
-
-				if ($batch->qty < $line->qty) {
-					!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $batch->qty : $stockUsedForBatch[$batch->id] = $batch->qty;
-				} else {
-					!empty($stockUsedForBatch[$batch->id]) ? $stockUsedForBatch[$batch->id] += $line->qty : $stockUsedForBatch[$batch->id] = $line->qty;
-				}
-				if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
-					$this->usedLotBatch[$batch->id] = $batch->id;
+			$stockObject = null;
+			if ($line->fk_product > 0) {
+				$product = new Product($this->db);
+				$product->fetch($line->fk_product);
+				$alreadyUsed = !empty($stockUsedForWarehouse[$line->fk_product][$this->fk_entrepot]) ? $stockUsedForWarehouse[$line->fk_product][$this->fk_entrepot] : 0;
+				$excludeList = !empty($warehousesToExclude[$line->fk_product]) ? $warehousesToExclude[$line->fk_product] : array();
+				$stockObject = $line->getBestWarehouse($product, $line->qty + $alreadyUsed, $this->fk_entrepot, $excludeList);
+				$stockObjects[$line->id] = $stockObject;
+				if ($stockObject) {
+					if (!isset($stockUsedForWarehouse[$line->fk_product][$stockObject->fk_entrepot])) $stockUsedForWarehouse[$line->fk_product][$stockObject->fk_entrepot] = 0;
+					if (!empty($conf->productbatch->enabled)) {
+						if ($line->fk_product > 0 && $product->hasbatch() && $line->status == MasterShipmentLine::STATUS_DRAFT) {
+							if (empty($line->fk_productbatch) && isset($stockObject)) {
+								$batch = $line->getBestLot($stockObject, $line->qty, $this->usedLotBatch);
+								if ($batch) {
+									if (!isset($stockUsedForBatch[$batch->id])) $stockUsedForBatch[$batch->id] = 0;
+									if ($batch->qty < $line->qty) {
+										$stockUsedForBatch[$batch->id] += $batch->qty;
+									} else {
+										$stockUsedForBatch[$batch->id] += $line->qty;
+									}
+									if ($stockUsedForBatch[$batch->id] >= $batch->qty) {
+										$line->fk_productbatch = $batch->id;
+										$this->usedLotBatch[$batch->id] = $batch->id;
+									}
+								}
+							}
+						}
+					}
+					// remember how much of this warehouse's stock this line consumes, so following lines of the
+					// same product see the reduced availability, and exclude the warehouse once fully consumed
+					// (getBestWarehouse() reloads stock from DB on each call, so we can't just decrement it there)
+					$remaining = $stockObject->real - $stockUsedForWarehouse[$line->fk_product][$stockObject->fk_entrepot];
+					if ($remaining <= $line->qty) {
+						if (!isset($warehousesToExclude[$line->fk_product])) $warehousesToExclude[$line->fk_product] = array();
+						$warehousesToExclude[$line->fk_product][] = $stockObject->fk_entrepot;
+						$stockUsedForWarehouse[$line->fk_product][$stockObject->fk_entrepot] += max(0, $remaining);
+					} else {
+						$stockUsedForWarehouse[$line->fk_product][$stockObject->fk_entrepot] += $line->qty;
+					}
 				}
 			}
 		}
