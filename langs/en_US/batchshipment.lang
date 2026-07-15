@@ -96,6 +96,7 @@ AlreadyAddedToMasterShipment = Product %s from %s already in picking list.
 NotAllLinesStatusGrouped = You need to check all lines to be able to validate.
 AutofillQtyToPick = Fill quantity to pick with line quantity
 AutofillQtyToLoad = Fill quantity to load with picked quantity
+SetLineCheckBoxes = Set atleast one line checkbox.
 
 #
 # Sample widget

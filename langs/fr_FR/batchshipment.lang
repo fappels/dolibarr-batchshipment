@@ -93,6 +93,7 @@ InvalidMasterShipment = Erreur liste de préparation.
 NoQtyToAddForThisLine = Aucune quantité à ajouter pour %s, probablement déjà dans une expédition.
 AlreadyAddedToMasterShipment = Produit %s de %s déjà dans liste de préparation.
 NotAllLinesStatusGrouped = Vous devez cocher toutes les lignes pour pouvoir valider.
+SetLineCheckBoxes = Cochez au moins une ligne.
 
 #
 # Sample widget

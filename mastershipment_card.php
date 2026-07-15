@@ -292,12 +292,14 @@ if (empty($reshook)) {
 		}
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
-		} else {
+		} elseif (!empty($linesChecked)) {
 			unset($_POST['line_checkbox']);
 			unset($_POST['qty_pick']);
 			unset($_POST['comment']);
 			unset($_POST['fk_productbatch']);
 			unset($_POST['fk_entrepot']);
+		} else {
+			setEventMessage('SetLineCheckBoxes');
 		}
 		$action = '';
 	}
@@ -311,12 +313,14 @@ if (empty($reshook)) {
 		$result = $object->load($user, $linesChecked, $qtysToLoad, $comments, $productbatchs, $warehouses);
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
-		} else {
+		} elseif (!empty($linesChecked)) {
 			unset($_POST['line_checkbox']);
 			unset($_POST['comment']);
 			unset($_POST['qty_load']);
 			unset($_POST['fk_productbatch']);
 			unset($_POST['fk_entrepot']);
+		} else {
+			setEventMessage('SetLineCheckBoxes');
 		}
 		$action = '';
 	}
@@ -327,9 +331,11 @@ if (empty($reshook)) {
 		$result = $object->check($user, $linesChecked, $comments);
 		if ($result < 0) {
 			setEventMessages($object->error, $object->errors, 'errors');
-		} else {
+		} elseif (!empty($linesChecked)) {
 			unset($_POST['comment']);
 			unset($_POST['line_checkbox']);
+		} else {
+			setEventMessage('SetLineCheckBoxes');
 		}
 		$action = '';
 	}
