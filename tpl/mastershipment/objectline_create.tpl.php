@@ -98,7 +98,7 @@ $colspan++;
 
 print '<td class="linecolcheckall center"></td>';
 $colspan++;
-if ($object->status == MasterShipment::STATUS_VALIDATED || $object->status == MasterShipment::STATUS_PICKED) {
+if ($object->status == MasterShipment::STATUS_VALIDATED || ($object->status == MasterShipment::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING'))) {
 	print '<td class="linecol"></td>';
 	$colspan++;
 }

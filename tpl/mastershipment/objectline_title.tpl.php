@@ -52,7 +52,7 @@ print '<td class="linecolqty right">'.$langs->trans('Quantity').'</td>';
 if ($object->status >= MasterShipment::STATUS_VALIDATED) print '<td class="linecolqty right">'.$langs->trans('PickedQuantity').'</td>';
 if ($object->status >= MasterShipment::STATUS_VALIDATED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) print '<td class="linecolqty right">'.$langs->trans('LoadedQuantity').'</td>';
 if (!empty($conf->productbatch->enabled)) print '<td class="linecoldescription right">'.$langs->trans('ProductLotBatch').'</td>'; // TODO add eatby/sellby for receptionpackage
-if ($object->status == MasterShipment::STATUS_VALIDATED || $object->status == MasterShipment::STATUS_PICKED) print '<td class="linecolqty right">'.$langs->trans('QtyTake').'</td>';
+if ($object->status == MasterShipment::STATUS_VALIDATED || ($object->status == MasterShipment::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) ) print '<td class="linecolqty right">'.$langs->trans('QtyTake').'</td>';
 print '<td class="linecol">'.$langs->trans('Source').'</td>';
 if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS || (!getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING') && $object->status >= MasterShipment::STATUS_PICKED)) print '<td class="linecol">'.$langs->trans('Shipment').'</td>';
 //if ($object->status >= MasterShipment::STATUS_SHIPMENTONPROCESS && isModEnabled('shipmentpackage')) print '<td class="linecol">'.$langs->trans('ShipmentPackage').'</td>';

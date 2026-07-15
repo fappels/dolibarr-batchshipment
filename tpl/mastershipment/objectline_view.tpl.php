@@ -144,7 +144,7 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 		}
 		print '</td>';
 	}
-	if ($object->status == MasterShipment::STATUS_PICKED) {
+	if ($object->status == MasterShipment::STATUS_PICKED && getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
 		$disabled = 0;
 		if ($line->status == MasterShipmentLine::STATUS_LOADED) {
 			$disabled = 1;

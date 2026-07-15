@@ -409,7 +409,11 @@ if (empty($reshook)) {
 		foreach ($object->lines as $mastershipmentLine) {
 			if ($object->status >= MasterShipment::STATUS_PICKED) {
 				if ($mastershipmentLine->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
-					$mastershipmentLine->status = MasterShipmentLine::STATUS_LOADED;
+					if (getDolGlobalInt('BATCHSHIPMENT_TWO_STAGE_PICKING')) {
+						$mastershipmentLine->status = MasterShipmentLine::STATUS_LOADED;
+					} else {
+						$mastershipmentLine->status = MasterShipmentLine::STATUS_PICKED;
+					}
 					$mastershipmentLine->update($user);
 				} elseif ($mastershipmentLine->status == MasterShipmentLine::STATUS_LOADED && $object->status == MasterShipment::STATUS_PICKED) {
 					$result = $mastershipmentLine->undoLoad($user);
