@@ -303,24 +303,22 @@ if (empty($reshook)) {
 	}
 
 	if ($action == 'confirm_load' && $confirm == 'yes' && $permissiontoadd) {
-		if (!GETPOST('undo_load')) {
-			$linesChecked = GETPOST('line_checkbox', 'array');
-			$qtysToLoad = GETPOST('qty_load', 'array');
-			$comments = GETPOST('comment', 'array');
-			$productbatchs = GETPOST('fk_productbatch', 'array');
-			$warehouses = GETPOST('fk_entrepot', 'array');
-			$result = $object->load($user, $linesChecked, $qtysToLoad, $comments, $productbatchs, $warehouses);
-			if ($result < 0) {
-				setEventMessages($object->error, $object->errors, 'errors');
-			} else {
-				unset($_POST['line_checkbox']);
-				unset($_POST['comment']);
-				unset($_POST['qty_load']);
-				unset($_POST['fk_productbatch']);
-				unset($_POST['fk_entrepot']);
-			}
-			$action = '';
+		$linesChecked = GETPOST('line_checkbox', 'array');
+		$qtysToLoad = GETPOST('qty_load', 'array');
+		$comments = GETPOST('comment', 'array');
+		$productbatchs = GETPOST('fk_productbatch', 'array');
+		$warehouses = GETPOST('fk_entrepot', 'array');
+		$result = $object->load($user, $linesChecked, $qtysToLoad, $comments, $productbatchs, $warehouses);
+		if ($result < 0) {
+			setEventMessages($object->error, $object->errors, 'errors');
+		} else {
+			unset($_POST['line_checkbox']);
+			unset($_POST['comment']);
+			unset($_POST['qty_load']);
+			unset($_POST['fk_productbatch']);
+			unset($_POST['fk_entrepot']);
 		}
+		$action = '';
 	}
 
 	if ($action == 'confirm_check' && $confirm == 'yes' && $permissiontoadd) {
@@ -374,16 +372,20 @@ if (empty($reshook)) {
 		$mastershipmentLine = new MasterShipmentLine($db);
 		$mastershipmentLine->fetch($mastershipment_line_id);
 		if ($mastershipmentLine->status == MasterShipmentLine::STATUS_GROUPED) {
-			$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
 			$mastershipmentLine->fk_productbatch = null;
 			$mastershipmentLine->fk_entrepot = null;
+			$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
+			$mastershipmentLine->update($user);
 		} elseif ($mastershipmentLine->status == MasterShipmentLine::STATUS_PICKED) {
-			$mastershipmentLine->status = MasterShipmentLine::STATUS_GROUPED;
 			$mastershipmentLine->qty_pick = 0;
+			$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
+			$mastershipmentLine->update($user);
+		} elseif ($mastershipmentLine->status == MasterShipmentLine::STATUS_LOADED) {
+			$result = $mastershipmentLine->undoLoad($user);
+			if ($result < 0) {
+				setEventMessages($mastershipmentLine->error, $mastershipmentLine->errors, 'errors');
+			}
 		}
-
-		$mastershipmentLine->status = MasterShipmentLine::STATUS_DRAFT;
-		$mastershipmentLine->update($user);
 		$action = '';
 	}
 
@@ -403,6 +405,11 @@ if (empty($reshook)) {
 				if ($mastershipmentLine->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
 					$mastershipmentLine->status = MasterShipmentLine::STATUS_LOADED;
 					$mastershipmentLine->update($user);
+				} elseif ($mastershipmentLine->status == MasterShipmentLine::STATUS_LOADED && $object->status == MasterShipment::STATUS_PICKED) {
+					$result = $mastershipmentLine->undoLoad($user);
+					if ($result < 0) {
+						setEventMessages($mastershipmentLine->error, $mastershipmentLine->errors, 'errors');
+					}
 				}
 			} else {
 				if (($mastershipmentLine->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $mastershipmentLine->status == MasterShipmentLine::STATUS_PICKED) {
@@ -418,14 +425,6 @@ if (empty($reshook)) {
 			}
 		}
 		$object->fetch($id);
-		$action = '';
-	}
-
-	if ($action == 'confirm_undo_load') {
-		$result = $object->undoLoad($user);
-		if ($result < 0) {
-			setEventMessages($object->error, $object->errors, 'errors');
-		}
 		$action = '';
 	}
 
@@ -740,11 +739,6 @@ if ($object->id > 0 && (empty($action) || ($action != 'edit' && $action != 'crea
 		//	array('type' => 'other', 'name' => 'idwarehouse', 'label' => $label, 'value' => $formproduct->selectWarehouses(GETPOST('idwarehouse') ?GETPOST('idwarehouse') : $warehouseid, 'idwarehouse', '', 1, 0, 0, $langs->trans("NoStockAction"), 0, $forcecombo))
 		//);
 		$formconfirm = $form->formconfirm($_SERVER['PHP_SELF'].'?id='.$object->id, $langs->trans('SetPickedMasterShipment'), $text, 'confirm_setpicked', $formquestion, 0, 1);
-	}
-
-	// Confirmation of undo load, will delete all shipmentpackage and shipment made
-	if ($action == 'confirm_load' && GETPOST('undo_load')) {
-		$formconfirm = $form->formconfirm($_SERVER["PHP_SELF"].'?id='.$object->id, $langs->trans('UndoAllLoad'), $langs->trans('ConfirmUndoAllLoading'), 'confirm_undo_load', '', 0, 1);
 	}
 
 	// Confirmation of undo all lines

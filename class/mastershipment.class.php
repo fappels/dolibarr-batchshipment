@@ -1738,58 +1738,6 @@ class MasterShipment extends CommonObject
 	}
 
 	/**
-	 * undo load (delete all shipment package if used)
-	 *
-	 * @param	User	$user			Object user that modify
-	 * @return	int						<0 if KO, 0=Nothing done, >0 if OK
-	 */
-	public function undoLoad($user)
-	{
-		$error = 0;
-		$deleted = 0;
-		$result = 0;
-
-		if (empty($this->lines)) {
-			$this->getLinesArray();
-		}
-
-		foreach ($this->lines as $line) {
-			if ($line->fk_shipmentpackage > 0) {
-				// delete shipment packages
-				$package = new ShipmentPackage($this->db);
-				$result = $package->fetch($line->fk_shipmentpackage);
-				if ($result > 0) {
-					$result = $package->delete($user);
-					if ($result < 0) {
-						$error++;
-						$this->errors = $package->errors;
-						break;
-					} else {
-						$deleted++;
-					}
-				}
-			} else {
-				$masterShipmentLine = new MasterShipmentLine($this->db);
-				$masterShipmentLine->fetch($line->id);
-				$masterShipmentLine->qty_load = 0;
-				$masterShipmentLine->fk_shipmentpackage = null;
-				$masterShipmentLine->fk_shipmentpackage_line = null;
-				$masterShipmentLine->status = MasterShipmentLine::STATUS_PICKED;
-				$masterShipmentLine->update($user);
-			}
-		}
-
-		if ($error) {
-			return $result;
-		} else {
-			$this->nbr_packages = 0;
-			$this->weight = 0;
-			$this->update($user);
-			return $deleted;
-		}
-	}
-
-	/**
 	 * Check lines
 	 *
 	 * if ok mark lines loaded.
@@ -2903,6 +2851,35 @@ class MasterShipmentLine extends CommonObjectLine
 			}
 		}
 		return $this->updateCommon($user, $notrigger);
+	}
+
+	/**
+	 * Undo load of the line (delete shipment package if used, set line back to picked)
+	 *
+	 * @param	User	$user	Object user that modify
+	 * @return	int				<0 if KO, >0 if OK
+	 */
+	public function undoLoad($user)
+	{
+		if ($this->fk_shipmentpackage > 0) {
+			dol_include_once('/shipmentpackage/class/shipmentpackage.class.php');
+			$package = new ShipmentPackage($this->db);
+			$result = $package->fetch($this->fk_shipmentpackage);
+			if ($result > 0) {
+				$result = $package->delete($user);
+				if ($result < 0) {
+					$this->errors = $package->errors;
+					return $result;
+				}
+			}
+		}
+
+		$this->qty_load = 0;
+		$this->fk_shipmentpackage = null;
+		$this->fk_shipmentpackage_line = null;
+		$this->status = self::STATUS_PICKED;
+
+		return $this->update($user);
 	}
 
 	/**

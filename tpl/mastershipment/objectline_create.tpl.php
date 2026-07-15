@@ -116,12 +116,8 @@ if (!$nolinesbefore) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
 		print '<input type="submit" class="button" value="'.$langs->trans('Load').'" name="load" id="loadbutton">';
 		print '</td>';
-		print '<td></td>';
-		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
-		print '<input type="submit" class="button" value="'.$langs->trans('UndoAllLoad').'" name="undo_load" id="undoloadbutton">';
-		print '</td>';
 		$colspan -= $beforeSubmitButtonColspan;
-		$colspan -= 2; // nbr of button
+		$colspan -= 1; // nbr of button
 	} elseif ($this->status == MasterShipment::STATUS_VALIDATED) {
 		print '<td class="bordertop nobottom linecoledit right valignmiddle">';
 		print '<input type="submit" class="button" value="'.$langs->trans('Pick').'" name="pick" id="pickbutton">';

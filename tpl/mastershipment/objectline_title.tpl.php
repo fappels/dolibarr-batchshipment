@@ -76,6 +76,10 @@ foreach ($object->lines as $line) {
 			$showUndoAll = true;
 			break;
 		}
+		if ($line->status == MasterShipmentLine::STATUS_LOADED && $object->status == MasterShipment::STATUS_PICKED) {
+			$showUndoAll = true;
+			break;
+		}
 	} else {
 		if (($line->status == MasterShipmentLine::STATUS_GROUPED && $object->status == MasterShipment::STATUS_DRAFT) || $line->status == MasterShipmentLine::STATUS_PICKED) {
 			$showUndoAll = true;

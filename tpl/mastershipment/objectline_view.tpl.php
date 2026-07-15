@@ -182,7 +182,11 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	$coldisplay++;
 	print '<td class="linecol">' . $line->getLabelStatus(3) . '</td>';
 	// tick
+	$disabled = 1;
 	if ($line->status == MasterShipmentLine::STATUS_LOADED && $object->status == MasterShipment::STATUS_SHIPMENTONPROCESS) {
+		$disabled = 0;
+	}
+	if ($line->status == MasterShipmentLine::STATUS_PICKED && $object->status == MasterShipment::STATUS_PICKED) {
 		$disabled = 0;
 	}
 	print '<td class="linecolcheck center">';
@@ -195,6 +199,8 @@ if ($object->status >= MasterShipment::STATUS_PICKED) {
 	print '<td>';
 	if ($line->status == MasterShipmentLine::STATUS_CHECKED && $object->status != MasterShipment::STATUS_CLOSED) {
 		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=undocheck&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
+	} elseif ($line->status == MasterShipmentLine::STATUS_LOADED && $object->status == MasterShipment::STATUS_PICKED) {
+		print '<a href="'.$_SERVER["PHP_SELF"].'?id='.$object->id.'&amp;action=undoline&amp;token=' . newToken() . '&amp;lineid='.$line->id.'">'. img_left('Undo', 0, 'style="max-width: 20px"') .'</a>';
 	}
 	print '</td>';
 	$coldisplay = $coldisplay + 1;
