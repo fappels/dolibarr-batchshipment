@@ -9,6 +9,8 @@ ModuleBatchShipmentName = Expédition groupée
 # Module description 'ModuleBatchShipmentDesc'
 ModuleBatchShipmentDesc = Module permettant le préparation groupée des commandes clients
 
+PdfTitle = Liste de préparation
+
 #
 # Admin page
 #

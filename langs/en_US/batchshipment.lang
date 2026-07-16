@@ -9,6 +9,8 @@ ModuleBatchShipmentName = Batch Shipment
 # Module description 'ModuleBatchShipmentDesc'
 ModuleBatchShipmentDesc = Module to do Batch picking of customer orders
 
+PdfTitle = Picking List
+
 #
 # Admin page
 #

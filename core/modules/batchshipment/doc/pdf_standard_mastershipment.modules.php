@@ -36,6 +36,9 @@
 
 dol_include_once('/batchshipment/core/modules/batchshipment/modules_mastershipment.php');
 require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
+require_once DOL_DOCUMENT_ROOT.'/product/stock/class/entrepot.class.php';
+require_once DOL_DOCUMENT_ROOT.'/product/stock/class/productlot.class.php';
+require_once DOL_DOCUMENT_ROOT.'/commande/class/commande.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/company.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/functions2.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/pdf.lib.php';
@@ -183,7 +186,7 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 		}
 
 		// Load translation files required by the page
-		$langfiles = array("main", "bills", "products", "dict", "companies", "compta");
+		$langfiles = array("main", "bills", "products", "dict", "companies", "compta", "orders", "stocks", "productbatch", "batchshipment@batchshipment");
 		$outputlangs->loadLangs($langfiles);
 
 		// Show Draft Watermark
@@ -529,6 +532,11 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 
 				$nexY = $tab_top + $this->tabTitleHeight;
 
+				// Caches to avoid re-fetching the same linked object on every line
+				$commandeCache = array();
+				$productlotCache = array();
+				$entrepotCache = array();
+
 				// Loop on each lines
 				$pageposbeforeprintlines = $pdf->getPage();
 				$pagenb = $pageposbeforeprintlines;
@@ -633,6 +641,48 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 
 					$pdf->SetFont('', '', $default_font_size - 1); // We reposition the default font
 
+					// Order
+					if ($this->getColumnStatus('commande')) {
+						$fkCommande = $object->lines[$i]->fk_commande;
+						if (!empty($fkCommande)) {
+							if (!isset($commandeCache[$fkCommande])) {
+								$commande = new Commande($this->db);
+								$commande->fetch($fkCommande);
+								$commandeCache[$fkCommande] = $commande->ref;
+							}
+							$this->printStdColumnContent($pdf, $curY, 'commande', $commandeCache[$fkCommande]);
+							$nexY = max($pdf->GetY(), $nexY);
+						}
+					}
+
+					// Product lot / batch
+					if ($this->getColumnStatus('productlot')) {
+						$fkProductLot = $object->lines[$i]->fk_productlot;
+						if (!empty($fkProductLot)) {
+							if (!isset($productlotCache[$fkProductLot])) {
+								$productLot = new Productlot($this->db);
+								$productLot->fetch($fkProductLot);
+								$productlotCache[$fkProductLot] = $productLot->batch;
+							}
+							$this->printStdColumnContent($pdf, $curY, 'productlot', $productlotCache[$fkProductLot]);
+							$nexY = max($pdf->GetY(), $nexY);
+						}
+					}
+
+					// Warehouse
+					if ($this->getColumnStatus('entrepot')) {
+						$fkEntrepot = $object->lines[$i]->fk_entrepot;
+						if (!empty($fkEntrepot)) {
+							if (!isset($entrepotCache[$fkEntrepot])) {
+								$entrepot = new Entrepot($this->db);
+								$entrepot->fetch($fkEntrepot);
+								$entrepotCache[$fkEntrepot] = $entrepot->ref;
+							}
+							$this->printStdColumnContent($pdf, $curY, 'entrepot', $entrepotCache[$fkEntrepot]);
+							$nexY = max($pdf->GetY(), $nexY);
+						}
+					}
+
 					// Quantity
 					// Enough for 6 chars
 					if ($this->getColumnStatus('qty')) {
@@ -666,7 +716,7 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 
 
 					$sign = 1;
-					
+
 					$nexY = max($nexY, $posYAfterImage);
 
 					// Add line
@@ -805,30 +855,18 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 	 */
 	protected function _tableau(&$pdf, $tab_top, $tab_height, $nexY, $outputlangs, $hidetop = 0, $hidebottom = 0, $currency = '', $outputlangsbis = null)
 	{
-		global $conf;
-
 		// Force to disable hidetop and hidebottom
 		$hidebottom = 0;
 		if ($hidetop) {
 			$hidetop = -1;
 		}
 
-		$currency = !empty($currency) ? $currency : $conf->currency;
 		$default_font_size = pdf_getPDFFontSize($outputlangs);
 
-		// Amount in (at tab_top - 1)
 		$pdf->SetTextColor(0, 0, 0);
 		$pdf->SetFont('', '', $default_font_size - 2);
 
 		if (empty($hidetop)) {
-			$titre = $outputlangs->transnoentities("AmountInCurrency", $outputlangs->transnoentitiesnoconv("Currency".$currency));
-			if (getDolGlobalInt('PDF_USE_ALSO_LANGUAGE_CODE') && is_object($outputlangsbis)) {
-				$titre .= ' - '.$outputlangsbis->transnoentities("AmountInCurrency", $outputlangsbis->transnoentitiesnoconv("Currency".$currency));
-			}
-
-			$pdf->SetXY($this->page_largeur - $this->marge_droite - ($pdf->GetStringWidth($titre) + 3), $tab_top - 4);
-			$pdf->MultiCell(($pdf->GetStringWidth($titre) + 3), 2, $titre);
-
 			//$conf->global->MAIN_PDF_TITLE_BACKGROUND_COLOR='230,230,230';
 			if (getDolGlobalString('MAIN_PDF_TITLE_BACKGROUND_COLOR')) {
 				$pdf->Rect($this->marge_gauche, $tab_top, $this->page_largeur - $this->marge_droite - $this->marge_gauche, $this->tabTitleHeight, 'F', array(), explode(',', getDolGlobalString('MAIN_PDF_TITLE_BACKGROUND_COLOR')));
@@ -1190,7 +1228,7 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 		$rank = 0; // do not use negative rank
 		$this->cols['desc'] = array(
 			'rank' => $rank,
-			'width' => false, // only for desc
+			'width' => false, // in mm
 			'status' => true,
 			'title' => array(
 				'textkey' => 'Designation', // use lang key is useful in somme case with module
@@ -1227,32 +1265,39 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 
 
 		$rank += 10;
-		$this->cols['vat'] = array(
+		$this->cols['commande'] = array(
 			'rank' => $rank,
-			'status' => false,
-			'width' => 16, // in mm
-			'title' => array(
-				'textkey' => 'VAT'
-			),
-			'border-left' => true, // add left line separator
-		);
-
-		if (!getDolGlobalInt('MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT') && !getDolGlobalInt('MAIN_GENERATE_DOCUMENTS_WITHOUT_VAT_COLUMN')) {
-			$this->cols['vat']['status'] = true;
-		}
-
-		$rank += 10;
-		$this->cols['subprice'] = array(
-			'rank' => $rank,
-			'width' => 19, // in mm
+			'width' => 25, // in mm
 			'status' => true,
 			'title' => array(
-				'textkey' => 'PriceUHT'
+				'textkey' => 'Order'
 			),
 			'border-left' => true, // add left line separator
 		);
 
 		$rank += 10;
+		$this->cols['productlot'] = array(
+			'rank' => $rank,
+			'width' => 30, // in mm
+			'status' => true,
+			'title' => array(
+				'textkey' => 'Batch'
+			),
+			'border-left' => true, // add left line separator
+		);
+
+		$rank += 10;
+		$this->cols['entrepot'] = array(
+			'rank' => $rank,
+			'width' => 40, // flexible, fills remaining width
+			'status' => true,
+			'title' => array(
+				'textkey' => 'Warehouse'
+			),
+			'border-left' => true, // add left line separator
+		);
+
+		$rank += 1000; // add a big offset to be sure is the last col because default extrafield rank is 100
 		$this->cols['qty'] = array(
 			'rank' => $rank,
 			'width' => 16, // in mm
@@ -1276,31 +1321,6 @@ class pdf_standard_mastershipment extends ModelePDFMasterShipment
 		if (getDolGlobalInt('PRODUCT_USE_UNITS')) {
 			$this->cols['unit']['status'] = true;
 		}
-
-		$rank += 10;
-		$this->cols['discount'] = array(
-			'rank' => $rank,
-			'width' => 13, // in mm
-			'status' => false,
-			'title' => array(
-				'textkey' => 'ReductionShort'
-			),
-			'border-left' => true, // add left line separator
-		);
-		if ($this->atleastonediscount) {
-			$this->cols['discount']['status'] = true;
-		}
-
-		$rank += 1000; // add a big offset to be sure is the last col because default extrafield rank is 100
-		$this->cols['totalexcltax'] = array(
-			'rank' => $rank,
-			'width' => 26, // in mm
-			'status' => true,
-			'title' => array(
-				'textkey' => 'TotalHTShort'
-			),
-			'border-left' => true, // add left line separator
-		);
 
 		// Add extrafields cols
 		if (!empty($object->lines)) {
