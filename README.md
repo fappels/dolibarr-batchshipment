@@ -21,6 +21,23 @@ This module speeds up warehouse operations by minimizing trips and ensuring corr
 
 Other external modules are available on [Dolistore.com](https://www.dolistore.com).
 
+## Usage
+
+### Setup
+
+- **One stage / two stage**: choose whether products are sorted right after picking (one stage) or sorted separately afterwards, during a dedicated loading step (two stage).
+- **Choose warehouse and lot/serial while picking**: off means the pick location and lot/serial must be defined before picking starts; on means they can also be chosen or adjusted while picking is in progress.
+
+### Workflow
+
+1. From the customer order list, filter the validated orders and use the "shippable" column to select the orders to pick. Use the mass action to create a new picking list or add the selection to an existing one.
+2. In the created picking list, review and adjust the pick locations and lot/serial numbers. Lines are prefilled with the best available values. To confirm a line, tick its checkbox and set the location and lot/serial. You can also split a line if you need to pick from multiple lots/serials or multiple locations.
+3. Validate the picking list to start picking. During picking, enter the picked quantities, then tick the lines and click the "Pick" button to confirm them.
+4. Validate the picking:
+   - In **one-stage** mode, the shipments corresponding to the orders are created automatically.
+   - In **two-stage** mode, you then sort the products by "loading" and enter the loaded quantities. Tick the lines and click the "Load" button to confirm loading. The corresponding shipments are created when the loading is validated.
+5. Check the shipments. Once checked, close all shipments and mark the orders as treated.
+
 ## Translations
 
 Translations can be completed manually by editing files in the module directories under `langs`.
